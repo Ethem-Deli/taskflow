@@ -148,7 +148,6 @@ Ethem Deli
 Team Members
 Douglas Greyling
 
-
 Weekly Meeting Time
 Thursday
 16:00 UTC
