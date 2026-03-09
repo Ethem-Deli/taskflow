@@ -153,7 +153,7 @@ Thursday
 16:00 UTC
 (20:00 GMT+3)
 
-Project Goa
+Project Goals
 By the end of the project, the team aims to deliver a fully functional task management application that allows teams to:
 Organize projects
 Assign tasks
