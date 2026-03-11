@@ -1,4 +1,5 @@
 # TaskFlow
+
 A Team Task & Project Tracker
 
 TaskFlow is a lightweight web-based project and task management application designed for small teams, students, and developers who want a simple way to organize projects and track progress.
@@ -86,42 +87,43 @@ taskflow
 ├── public
 │
 ├── src
-│   ├── app
-│   │   ├── page.js
-│   │   ├── dashboard
-│   │   ├── projects
-│   │   └── tasks
-│   │
-│   ├── components
-│   │   ├── Navbar
-│   │   ├── TaskCard
-│   │   └── KanbanBoard
-│   │
-│   ├── lib
-│   │   ├── db.js
-│   │   └── auth.js
-│   │
-│   ├── models
-│   │   ├── User.js
-│   │   ├── Project.js
-│   │   └── Task.js
-│   │
-│   └── api
-│       ├── auth
-│       ├── projects
-│       └── tasks
+│ ├── app
+│ │ ├── page.js
+│ │ ├── dashboard
+│ │ ├── projects
+│ │ └── tasks
+│ │
+│ ├── components
+│ │ ├── Navbar
+│ │ ├── TaskCard
+│ │ └── KanbanBoard
+│ │
+│ ├── lib
+│ │ ├── db.js
+│ │ └── auth.js
+│ │
+│ ├── models
+│ │ ├── User.js
+│ │ ├── Project.js
+│ │ └── Task.js
+│ │
+│ └── api
+│ ├── auth
+│ ├── projects
+│ └── tasks
 │
 └── README.md
 
 Getting Started
+
 1. Clone the Repository
-git clone https://github.com/your-username/taskflow.git
-Move into the project folder:
-cd taskflow
+   git clone https://github.com/your-username/taskflow.git
+   Move into the project folder:
+   cd taskflow
 2. Install Dependencies
-npm install
+   npm install
 3. Run the Development Server
-npm run dev
+   npm run dev
 
 Open your browser and visit:
 
@@ -162,3 +164,8 @@ Collaborate efficiently
 
 License
 This project is developed for educational purposes as part of the CSE 499 Software Development Program.
+
+## Favorite Quote
+
+> "The best way to get started is to quit talking and begin doing."  
+> — Walt Disney
