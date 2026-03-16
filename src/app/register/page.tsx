@@ -38,7 +38,7 @@ export default function RegisterPage() {
         return;
       }
 
-      router.push("/login");
+      router.push("/login?registered=1");
     } catch {
       setError("Something went wrong");
     } finally {
