@@ -15,23 +15,61 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  assignedTasks Task[]   @relation("AssignedTasks")
-  comments      Comment[]
+  projectMemberships ProjectMember[]
+  taskAssignments    TaskAssignee[]
+  comments           Comment[]
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members ProjectMember[]
+  tasks   Task[]
+}
+
+model ProjectMember {
+  id       String   @id @default(cuid())
+  role     String   @default("MEMBER") // "OWNER" | "MEMBER"
+  joinedAt DateTime @default(now())
+
+  projectId String
+  userId    String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
 }
 
 model Task {
-  id          String      @id @default(cuid())
+  id          String       @id @default(cuid())
   title       String
   description String?
-  status      TaskStatus  @default(TODO)
+  status      TaskStatus   @default(TODO)
   priority    TaskPriority @default(MEDIUM)
   dueDate     DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
-  assigneeId   String?
-  assignee     User?      @relation("AssignedTasks", fields: [assigneeId], references: [id])
-  comments     Comment[]
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  assignees TaskAssignee[]
+  comments  Comment[]
+}
+
+model TaskAssignee {
+  taskId String
+  userId String
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
 }
 
 model Comment {
@@ -39,8 +77,8 @@ model Comment {
   content   String
   createdAt DateTime @default(now())
 
-  taskId    String
-  userId    String
+  taskId String
+  userId String
 
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
