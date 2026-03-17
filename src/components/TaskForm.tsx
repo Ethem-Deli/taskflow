@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 type Props = {
+  projectId: string;
   onCreated?: () => void;
 };
 
@@ -13,7 +14,7 @@ type TaskFormData = {
   dueDate: string;
 };
 
-export default function TaskForm({ onCreated }: Props) {
+export default function TaskForm({ projectId, onCreated }: Props) {
   const [form, setForm] = useState<TaskFormData>({
     title: "",
     description: "",
@@ -23,13 +24,13 @@ export default function TaskForm({ onCreated }: Props) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      const response = await fetch("/api/tasks", {
+      const response = await fetch(`/api/projects/${projectId}/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
