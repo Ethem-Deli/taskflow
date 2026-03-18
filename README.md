@@ -146,8 +146,7 @@ Enhancements, testing, and UI improvements.
 Team Members
 Project Leader
 Ethem Deli
-
-Team Members
+Steve Amos Daprim
 Douglas Greyling
 
 Weekly Meeting Time
