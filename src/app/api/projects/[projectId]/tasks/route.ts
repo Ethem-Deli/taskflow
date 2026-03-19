@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { projectTaskSchema } from "@/lib/validators";
+import { projectTaskSchema, taskFilterSchema } from "@/lib/validators"; // Added taskFilterSchema to validate query params
 import { assertProjectMember } from "@/lib/project-auth";
+
 
 type Params = { params: Promise<{ projectId: string }> };
 
@@ -23,14 +24,35 @@ export async function GET(req: Request, { params }: Params) {
   if (error) return error;
 
   const { searchParams } = new URL(req.url);
-  const status = searchParams.get("status") ?? undefined;
-  const priority = searchParams.get("priority") ?? undefined;
+  
+  // Previously, status and priority were cast directly without validation,
+  // which allowed invalid values to be passed silently.
+  // Now we validate query params using taskFilterSchema (zod) to return
+  // a proper 400 error when invalid values are provided.
+
+  // -- Old code (kept for comparison) --
+  // const status = searchParams.get("status") ?? undefined;
+  // const priority = searchParams.get("priority") ?? undefined;
+
+  const parsed = taskFilterSchema.safeParse({
+    status: searchParams.get("status") ?? undefined,
+    priority: searchParams.get("priority") ?? undefined,
+  });
+
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const { status, priority } = parsed.data;
 
   const tasks = await db.task.findMany({
     where: {
       projectId,
-      ...(status && { status: status as "TODO" | "IN_PROGRESS" | "DONE" }),
-      ...(priority && { priority: priority as "LOW" | "MEDIUM" | "HIGH" }),
+      // -- Old code (kept for comparison) --
+      // ...(status && { status: status as "TODO" | "IN_PROGRESS" | "DONE" }),
+      // ...(priority && { priority: priority as "LOW" | "MEDIUM" | "HIGH" }),
+      ...(status && { status }),
+      ...(priority && { priority }),
     },
     include: {
       assignees: { include: assigneeSelect },
