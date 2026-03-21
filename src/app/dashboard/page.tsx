@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
 import TaskForm from "@/components/TaskForm";
 import ProjectForm from "@/components/ProjectForm";
+import MembersPanel from "@/components/MembersPanel";
 
 type Project = {
   id: string;
@@ -25,10 +26,19 @@ export default function DashboardPage() {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  {/* Project form */ }
+
+  // Controls visibility of the ProjectForm card
   const [showProjectForm, setShowProjectForm] = useState(false);
 
-  {/* Refactored loadProjects function */ }
+  // Controls which tab is active: tasks or members
+  const [activeTab, setActiveTab] = useState<"tasks" | "members">("tasks");
+
+  // Resolves the full active project object from the projects list
+  // needed to pass currentUserRole to MembersPanel
+  const activeProject = projects.find((p) => p.id === activeProjectId) ?? null;
+
+  // Extracted to a named function so it can be
+  // called both on mount and after creating a new project
   async function loadProjects() {
     try {
       const res = await fetch("/api/projects");
@@ -56,19 +66,26 @@ export default function DashboardPage() {
     }
   }
 
+  // Resets activeTab to "tasks" when switching projects
   useEffect(() => {
-    if (activeProjectId) loadTasks(activeProjectId);
-    else setTasks([]);
+    if (activeProjectId) {
+      loadTasks(activeProjectId);
+      setActiveTab("tasks");
+    } else {
+      setTasks([]);
+    }
   }, [activeProjectId]);
 
   return (
     <main className="min-h-screen px-6 py-10">
       <div className="mx-auto max-w-6xl space-y-6">
+
+        {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Dashboard</h1>
-
-          {/* Project form toggle */}
           <div className="flex items-center gap-3">
+
+            {/* Toggles the ProjectForm card below the header */}
             <button
               onClick={() => setShowProjectForm((prev) => !prev)}
               className="rounded-lg border px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
@@ -85,86 +102,134 @@ export default function DashboardPage() {
           </div>
         </div>
 
-          {/* Project form — shown only when toggled */}
-          {showProjectForm && (
-            <ProjectForm
-              onCreated={() => {
-                setShowProjectForm(false);
-                loadProjects();
-              }}
-            />
-          )}
+        {/* ProjectForm is only rendered when showProjectForm is true.
+            After creating a project, hides the form and refreshes the project list. */}
+        {showProjectForm && (
+          <ProjectForm
+            onCreated={() => {
+              setShowProjectForm(false);
+              loadProjects();
+            }}
+          />
+        )}
 
-          {projects.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto">
-              {projects.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setActiveProjectId(p.id)}
-                  className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${activeProjectId === p.id
+        {/* Project tabs */}
+        {projects.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto">
+            {projects.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setActiveProjectId(p.id)}
+                className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                  activeProjectId === p.id
                     ? "bg-slate-900 text-white"
                     : "border text-slate-600 hover:bg-slate-50"
-                    }`}
-                >
-                  {p.name}
-                </button>
-              ))}
+                }`}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Main content - only rendered when a project is selected */}
+        {activeProjectId && activeProject ? (
+          <div className="space-y-4">
+
+            {/* Tab switcher between Tasks and Members views */}
+            <div className="flex gap-1 rounded-xl border bg-white p-1 w-fit">
+              <button
+                onClick={() => setActiveTab("tasks")}
+                className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+                  activeTab === "tasks"
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                Tasks
+              </button>
+              <button
+                onClick={() => setActiveTab("members")}
+                className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+                  activeTab === "members"
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                Members
+              </button>
             </div>
-          )}
 
-          {activeProjectId ? (
-            <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
-              <TaskForm
-                projectId={activeProjectId}
-                onCreated={() => loadTasks(activeProjectId)}
-              />
+            {/* Tasks tab */}
+            {activeTab === "tasks" && (
+              <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
+                <TaskForm
+                  projectId={activeProjectId}
+                  onCreated={() => loadTasks(activeProjectId)}
+                />
 
-              <section className="rounded-2xl bg-white p-6 shadow-sm">
-                <p className="mt-1 text-slate-600">All tasks in one place.</p>
+                <section className="rounded-2xl bg-white p-6 shadow-sm">
+                  <p className="mt-1 text-slate-600">All tasks in one place.</p>
 
-                {loading ? (
-                  <p className="mt-6 text-slate-500">Loading tasks...</p>
-                ) : tasks.length === 0 ? (
-                  <p className="mt-6 text-slate-500">No tasks yet.</p>
-                ) : (
-                  <div className="mt-6 space-y-4">
-                    {tasks.map((task) => (
-                      <article key={task.id} className="rounded-xl border p-4">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <h2 className="font-semibold">{task.title}</h2>
-                            {task.description ? (
-                              <p className="mt-1 text-sm text-slate-600">
-                                {task.description}
-                              </p>
-                            ) : null}
+                  {loading ? (
+                    <p className="mt-6 text-slate-500">Loading tasks...</p>
+                  ) : tasks.length === 0 ? (
+                    <p className="mt-6 text-slate-500">No tasks yet.</p>
+                  ) : (
+                    <div className="mt-6 space-y-4">
+                      {tasks.map((task) => (
+                        <article key={task.id} className="rounded-xl border p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <h2 className="font-semibold">{task.title}</h2>
+                              {task.description ? (
+                                <p className="mt-1 text-sm text-slate-600">
+                                  {task.description}
+                                </p>
+                              ) : null}
+                            </div>
+                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium">
+                              {task.priority}
+                            </span>
                           </div>
-                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium">
-                            {task.priority}
-                          </span>
-                        </div>
-                        <div className="mt-3 flex gap-2 text-xs text-slate-500">
-                          <span>Status: {task.status}</span>
-                          <span>•</span>
-                          <span>
-                            Due:{" "}
-                            {task.dueDate
-                              ? new Date(task.dueDate).toLocaleDateString()
-                              : "None"}
-                          </span>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </section>
-            </div>
-          ) : (
-            <p className="text-slate-500">
-              {loading ? "Loading..." : "You are not a member of any projects yet."}
-            </p>
-          )}
-        </div>
+                          <div className="mt-3 flex gap-2 text-xs text-slate-500">
+                            <span>Status: {task.status}</span>
+                            <span>•</span>
+                            <span>
+                              Due:{" "}
+                              {task.dueDate
+                                ? new Date(task.dueDate).toLocaleDateString()
+                                : "None"}
+                            </span>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </div>
+            )}
+
+            {/* Members tab renders MembersPanel component.
+                Passes projectId and the current user's role so the panel
+                knows whether to show the invite and remove controls. */}
+            {activeTab === "members" && (
+              <MembersPanel
+                projectId={activeProjectId}
+                currentUserRole={activeProject.role}
+              />
+            )}
+
+          </div>
+        ) : (
+          <p className="text-slate-500">
+            {loading
+              ? "Loading..."
+              : "You are not a member of any projects yet. Create one to get started!"}
+          </p>
+        )}
+
+      </div>
     </main>
   );
 }
