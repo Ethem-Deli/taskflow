@@ -38,7 +38,7 @@ export const updateProjectTaskSchema = projectTaskSchema.partial();
 // QUERY PARAM VALIDATORS
 // Used to validate URL search params in GET endpoints.
 // ─────────────────────────────────────────────
- 
+
 /**
  * Validates filter query params for GET /api/projects/:projectId/tasks
  * Example: ?status=IN_PROGRESS&priority=HIGH
@@ -47,7 +47,7 @@ export const taskFilterSchema = z.object({
   status: z.enum(["TODO", "IN_PROGRESS", "DONE"]).optional(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
 });
- 
+
 /**
  * Validates query params for GET /api/projects/:projectId/tasks/search
  * Example: ?q=homepage&status=IN_PROGRESS&priority=HIGH
@@ -59,4 +59,12 @@ export const taskSearchSchema = z.object({
     .max(100, "Search query is too long"),
   status: z.enum(["TODO", "IN_PROGRESS", "DONE"]).optional(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
+});
+
+/**
+ * Validates comments request
+ */
+
+export const commentSchema = z.object({
+  content: z.string().min(1, "Comment cannot be empty").max(1000, "Comment is too long"),
 });
