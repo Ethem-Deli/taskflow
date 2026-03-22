@@ -111,5 +111,11 @@ export async function POST(req: Request, { params }: Params) {
     include: { assignees: { include: assigneeSelect } },
   });
 
-  return NextResponse.json({ task }, { status: 201 });
+  return NextResponse.json(
+  {
+    task,
+    message: "Task created successfully",
+  },
+  { status: 201 },
+);
 }

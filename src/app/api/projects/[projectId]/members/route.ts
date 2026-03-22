@@ -83,15 +83,16 @@ export async function POST(req: Request, { params }: Params) {
   });
 
   return NextResponse.json(
-    {
-      member: {
-        userId: user.id,
-        name: user.name,
-        email: user.email,
-        role: membership.role,
-        joinedAt: membership.joinedAt,
-      },
+  {
+    member: {
+      userId: user.id,
+      name: user.name,
+      email: user.email,
+      role: membership.role,
+      joinedAt: membership.joinedAt,
     },
-    { status: 201 },
-  );
+    message: "Member added successfully",
+  },
+  { status: 201 },
+);
 }

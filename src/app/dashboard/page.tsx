@@ -5,6 +5,9 @@ import { signOut } from "next-auth/react";
 import TaskForm from "@/components/TaskForm";
 import ProjectForm from "@/components/ProjectForm";
 import MembersPanel from "@/components/MembersPanel";
+import DashboardLayout from "@/components/DashboardLayout"; // ED: Import layout component
+import TaskList from "@/components/TaskList";
+import ProjectList from "@/components/ProjectList";
 
 type Project = {
   id: string;
@@ -76,160 +79,125 @@ export default function DashboardPage() {
     }
   }, [activeProjectId]);
 
+  // ED : Loading state so the app wont render empty UI while fetching projects on initial load.
+  if (loading && projects.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-slate-500 text-lg">Loading dashboard...</p>
+      </div>
+    );
+  }
+
   return (
-    <main className="min-h-screen px-6 py-10">
-      <div className="mx-auto max-w-6xl space-y-6">
-
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <div className="flex items-center gap-3">
-
-            {/* Toggles the ProjectForm card below the header */}
-            <button
-              onClick={() => setShowProjectForm((prev) => !prev)}
-              className="rounded-lg border px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
-            >
-              {showProjectForm ? "Cancel" : "+ New project"}
-            </button>
-
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="rounded-lg border px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-
-        {/* ProjectForm is only rendered when showProjectForm is true.
-            After creating a project, hides the form and refreshes the project list. */}
-        {showProjectForm && (
-          <ProjectForm
-            onCreated={() => {
-              setShowProjectForm(false);
-              loadProjects();
-            }}
-          />
-        )}
-
-        {/* Project tabs */}
-        {projects.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto">
-            {projects.map((p) => (
+    // ED: Wrap entire page with DashboardLayout
+    // This ensures the sidebar and layout structure are applied correctly
+    <DashboardLayout>
+      <main className="min-h-screen px-6 py-10">
+        <div className="mx-auto max-w-6xl space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <div className="flex items-center gap-3">
+              {/* Toggles the ProjectForm card below the header */}
               <button
-                key={p.id}
-                onClick={() => setActiveProjectId(p.id)}
-                className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                  activeProjectId === p.id
-                    ? "bg-slate-900 text-white"
-                    : "border text-slate-600 hover:bg-slate-50"
-                }`}
+                onClick={() => setShowProjectForm((prev) => !prev)}
+                className="rounded-lg border px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
               >
-                {p.name}
+                {showProjectForm ? "Cancel" : "+ New project"}
               </button>
-            ))}
-          </div>
-        )}
 
-        {/* Main content - only rendered when a project is selected */}
-        {activeProjectId && activeProject ? (
-          <div className="space-y-4">
-
-            {/* Tab switcher between Tasks and Members views */}
-            <div className="flex gap-1 rounded-xl border bg-white p-1 w-fit">
               <button
-                onClick={() => setActiveTab("tasks")}
-                className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
-                  activeTab === "tasks"
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-600 hover:bg-slate-50"
-                }`}
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="rounded-lg border px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
               >
-                Tasks
-              </button>
-              <button
-                onClick={() => setActiveTab("members")}
-                className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
-                  activeTab === "members"
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                Members
+                Sign out
               </button>
             </div>
-
-            {/* Tasks tab */}
-            {activeTab === "tasks" && (
-              <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
-                <TaskForm
-                  projectId={activeProjectId}
-                  onCreated={() => loadTasks(activeProjectId)}
-                />
-
-                <section className="rounded-2xl bg-white p-6 shadow-sm">
-                  <p className="mt-1 text-slate-600">All tasks in one place.</p>
-
-                  {loading ? (
-                    <p className="mt-6 text-slate-500">Loading tasks...</p>
-                  ) : tasks.length === 0 ? (
-                    <p className="mt-6 text-slate-500">No tasks yet.</p>
-                  ) : (
-                    <div className="mt-6 space-y-4">
-                      {tasks.map((task) => (
-                        <article key={task.id} className="rounded-xl border p-4">
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <h2 className="font-semibold">{task.title}</h2>
-                              {task.description ? (
-                                <p className="mt-1 text-sm text-slate-600">
-                                  {task.description}
-                                </p>
-                              ) : null}
-                            </div>
-                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium">
-                              {task.priority}
-                            </span>
-                          </div>
-                          <div className="mt-3 flex gap-2 text-xs text-slate-500">
-                            <span>Status: {task.status}</span>
-                            <span>•</span>
-                            <span>
-                              Due:{" "}
-                              {task.dueDate
-                                ? new Date(task.dueDate).toLocaleDateString()
-                                : "None"}
-                            </span>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </section>
-              </div>
-            )}
-
-            {/* Members tab renders MembersPanel component.
-                Passes projectId and the current user's role so the panel
-                knows whether to show the invite and remove controls. */}
-            {activeTab === "members" && (
-              <MembersPanel
-                projectId={activeProjectId}
-                currentUserRole={activeProject.role}
-              />
-            )}
-
           </div>
-        ) : (
-          <p className="text-slate-500">
-            {loading
-              ? "Loading..."
-              : "You are not a member of any projects yet. Create one to get started!"}
-          </p>
-        )}
 
-      </div>
-    </main>
+          {/* ProjectForm is only rendered when showProjectForm is true.
+              After creating a project, hides the form and refreshes the project list. */}
+          {showProjectForm && (
+            <ProjectForm
+              onCreated={() => {
+                setShowProjectForm(false);
+                loadProjects();
+              }}
+            />
+          )}
+
+          {/* Project tabs */}
+          {projects.length > 0 && (
+            <ProjectList
+              projects={projects}
+              activeProjectId={activeProjectId}
+              setActiveProjectId={setActiveProjectId}
+            />
+          )}
+
+          {/* Main content - only rendered when a project is selected */}
+          {activeProjectId && activeProject ? (
+            <div className="space-y-4">
+              {/* Tab switcher between Tasks and Members views */}
+              <div className="flex gap-1 rounded-xl border bg-white p-1 w-fit">
+                <button
+                  onClick={() => setActiveTab("tasks")}
+                  className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+                    activeTab === "tasks"
+                      ? "bg-slate-900 text-white"
+                      : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  Tasks
+                </button>
+                <button
+                  onClick={() => setActiveTab("members")}
+                  className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+                    activeTab === "members"
+                      ? "bg-slate-900 text-white"
+                      : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  Members
+                </button>
+              </div>
+
+              {/* Tasks tab */}
+              {activeTab === "tasks" && (
+                <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
+                  <TaskForm
+                    projectId={activeProjectId}
+                    onCreated={() => loadTasks(activeProjectId)}
+                  />
+
+                  <section className="rounded-2xl bg-white p-6 shadow-sm">
+                    <p className="mt-1 text-slate-600">All tasks in one place.</p>
+
+                    {/* ED: Use TaskList component so task rendering logic stays reusable and cleaner */}
+                    <TaskList tasks={tasks} loading={loading} />
+                  </section>
+                </div>
+              )}
+
+              {/* Members tab renders MembersPanel component.
+                  Passes projectId and the current user's role so the panel
+                  knows whether to show the invite and remove controls. */}
+              {activeTab === "members" && (
+                <MembersPanel
+                  projectId={activeProjectId}
+                  currentUserRole={activeProject.role}
+                />
+              )}
+            </div>
+          ) : (
+            <p className="text-slate-500">
+              {loading
+                ? "Loading..."
+                : "You are not a member of any projects yet. Create one to get started!"}
+            </p>
+          )}
+        </div>
+      </main>
+    </DashboardLayout> //ED:Closing layout wrapper
   );
 }

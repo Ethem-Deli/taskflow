@@ -22,11 +22,13 @@ export default function TaskForm({ projectId, onCreated }: Props) {
     dueDate: "",
   });
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
+    setSuccess("");
     setLoading(true);
 
     try {
@@ -39,7 +41,11 @@ export default function TaskForm({ projectId, onCreated }: Props) {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Failed to create task");
+        setError(
+          typeof data.error === "string"
+            ? data.error
+            : "Failed to create task",
+        );
         setLoading(false);
         return;
       }
@@ -50,6 +56,8 @@ export default function TaskForm({ projectId, onCreated }: Props) {
         priority: "MEDIUM",
         dueDate: "",
       });
+
+      setSuccess(data.message || "Task created successfully");
       onCreated?.();
     } catch {
       setError("Something went wrong");
@@ -102,7 +110,17 @@ export default function TaskForm({ projectId, onCreated }: Props) {
         />
       </div>
 
-      {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+      {error ? (
+        <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </p>
+      ) : null}
+
+      {success ? (
+        <p className="mt-3 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+          {success}
+        </p>
+      ) : null}
 
       <button
         type="submit"

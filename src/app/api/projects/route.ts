@@ -62,5 +62,11 @@ export async function POST(req: Request) {
     return created;
   });
 
-  return NextResponse.json({ project }, { status: 201 });
+  return NextResponse.json(
+   {
+      project,
+      message: "Project created successfully",
+    },
+    { status: 201 },
+  );
 }
