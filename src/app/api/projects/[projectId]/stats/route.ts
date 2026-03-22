@@ -20,7 +20,7 @@ export async function GET(_req: Request, { params }: Params) {
   const now = new Date();
 
   // Run all queries in parallel for performance
-  const [tasksByStatus, tasksByPriority, overdueTasks, membersWithCounts] =
+  const [tasksByStatus, tasksByPriority, overdueTasks, members, tasks] =
     await Promise.all([
       // Total tasks grouped by status
       db.task.groupBy({
@@ -45,7 +45,11 @@ export async function GET(_req: Request, { params }: Params) {
         },
       }),
 
-      // Per-member stats: how many tasks assigned and how many completed
+      // UPDATED:
+      // We now fetch project members directly without using taskAssignments.
+      // The previous version used m.user.taskAssignments, but that relation
+      // does not exist in the current Prisma schema.
+      // So instead, we fetch members here...
       db.projectMember.findMany({
         where: { projectId },
         select: {
@@ -55,14 +59,21 @@ export async function GET(_req: Request, { params }: Params) {
               id: true,
               name: true,
               email: true,
-              taskAssignments: {
-                where: { task: { projectId } },
-                select: {
-                  task: { select: { status: true } },
-                },
-              },
             },
           },
+        },
+      }),
+
+      // UPDATED:
+      // ...and fetch project tasks separately using the real schema fields.
+      // The schema supports a single assignee per task through assigneeId,
+      // so we use that to calculate per-member productivity.
+      db.task.findMany({
+        where: { projectId },
+        select: {
+          id: true,
+          status: true,
+          assigneeId: true,
         },
       }),
     ]);
@@ -93,10 +104,15 @@ export async function GET(_req: Request, { params }: Params) {
   };
 
   // Format per-member productivity
-  const memberStats = membersWithCounts.map((m) => {
-    const assigned = m.user.taskAssignments.length;
-    const completed = m.user.taskAssignments.filter(
-      (a) => a.task.status === "DONE"
+  const memberStats = members.map((m) => {
+    // UPDATED:
+    // Since we now use single-assignee tasks, we count all tasks
+    // where task.assigneeId matches the current member's user id.
+    const assignedTasks = tasks.filter((t) => t.assigneeId === m.user.id);
+
+    // Count only completed assigned tasks
+    const completedTasks = assignedTasks.filter(
+      (t) => t.status === "DONE"
     ).length;
 
     return {
@@ -104,10 +120,12 @@ export async function GET(_req: Request, { params }: Params) {
       name: m.user.name,
       email: m.user.email,
       role: m.role,
-      tasksAssigned: assigned,
-      tasksCompleted: completed,
+      tasksAssigned: assignedTasks.length,
+      tasksCompleted: completedTasks,
       completionRate:
-        assigned > 0 ? Math.round((completed / assigned) * 100) : 0,
+        assignedTasks.length > 0
+          ? Math.round((completedTasks / assignedTasks.length) * 100)
+          : 0,
     };
   });
 

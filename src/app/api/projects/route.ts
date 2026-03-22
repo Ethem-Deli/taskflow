@@ -18,7 +18,7 @@ export async function GET() {
         select: { id: true, name: true, description: true, createdAt: true },
       },
     },
-    orderBy: { joinedAt: "asc" },
+    orderBy: { createdAt: "asc" },
   });
 
   const projects = memberships.map((m) => ({
@@ -45,11 +45,12 @@ export async function POST(req: Request) {
 
   const project = await db.$transaction(async (tx) => {
     const created = await tx.project.create({
-      data: {
-        name: parsed.data.name,
-        description: parsed.data.description,
-      },
-    });
+    data: {
+    name: parsed.data.name,
+    description: parsed.data.description,
+    ownerId: session.user.id,
+  },
+});
 
     await tx.projectMember.create({
       data: {

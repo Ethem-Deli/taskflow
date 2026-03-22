@@ -8,7 +8,7 @@ import { assertProjectMember } from "@/lib/project-auth";
 type Params = { params: Promise<{ projectId: string; taskId: string }> };
 
 const assigneeSelect = {
-  user: { select: { id: true, name: true, email: true } },
+  select: { id: true, name: true, email: true },
 };
 
 export async function GET(_req: Request, { params }: Params) {
@@ -22,10 +22,10 @@ export async function GET(_req: Request, { params }: Params) {
   const { error } = await assertProjectMember(projectId, session.user.id);
   if (error) return error;
 
-  const task = await db.task.findUnique({
+  const task = await db.task.findFirst({
     where: { id: taskId, projectId },
     include: {
-      assignees: { include: assigneeSelect },
+      assignee: assigneeSelect,
       comments: {
         include: { user: { select: { id: true, name: true } } },
         orderBy: { createdAt: "asc" },
@@ -51,6 +51,15 @@ export async function PATCH(req: Request, { params }: Params) {
   const { error } = await assertProjectMember(projectId, session.user.id);
   if (error) return error;
 
+  const existingTask = await db.task.findFirst({
+    where: { id: taskId, projectId },
+    select: { id: true },
+  });
+
+  if (!existingTask) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
+
   const body = await req.json();
   const parsed = updateProjectTaskSchema.safeParse(body);
 
@@ -58,41 +67,42 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { assigneeIds, dueDate, ...rest } = parsed.data;
+  const { assigneeId, dueDate, ...rest } = parsed.data;
 
-  if (assigneeIds !== undefined && assigneeIds.length > 0) {
-    const memberIds = await db.projectMember
-      .findMany({ where: { projectId }, select: { userId: true } })
-      .then((rows) => rows.map((r) => r.userId));
+  if (assigneeId) {
+    const member = await db.projectMember.findUnique({
+      where: {
+        projectId_userId: { projectId, userId: assigneeId },
+      },
+      select: { userId: true },
+    });
 
-    const invalid = assigneeIds.filter((id) => !memberIds.includes(id));
-    if (invalid.length > 0) {
+    if (!member) {
       return NextResponse.json(
-        { error: "One or more assignees are not members of this project" },
+        { error: "Assignee is not a member of this project" },
         { status: 400 },
       );
     }
   }
 
-  const task = await db.$transaction(async (tx) => {
-    if (assigneeIds !== undefined) {
-      await tx.taskAssignee.deleteMany({ where: { taskId } });
-
-      if (assigneeIds.length > 0) {
-        await tx.taskAssignee.createMany({
-          data: assigneeIds.map((userId) => ({ taskId, userId })),
-        });
-      }
-    }
-
-    return tx.task.update({
-      where: { id: taskId, projectId },
-      data: {
-        ...rest,
-        ...(dueDate !== undefined && { dueDate: dueDate ? new Date(dueDate) : null }),
+  const task = await db.task.update({
+    where: { id: taskId },
+    data: {
+      ...rest,
+      ...(dueDate !== undefined && {
+        dueDate: dueDate ? new Date(dueDate) : null,
+      }),
+      ...(assigneeId !== undefined && {
+        assigneeId: assigneeId || null,
+      }),
+    },
+    include: {
+      assignee: assigneeSelect,
+      comments: {
+        include: { user: { select: { id: true, name: true } } },
+        orderBy: { createdAt: "asc" },
       },
-      include: { assignees: { include: assigneeSelect } },
-    });
+    },
   });
 
   return NextResponse.json({ task });
@@ -109,7 +119,18 @@ export async function DELETE(_req: Request, { params }: Params) {
   const { error } = await assertProjectMember(projectId, session.user.id);
   if (error) return error;
 
-  await db.task.delete({ where: { id: taskId, projectId } });
+  const existingTask = await db.task.findFirst({
+    where: { id: taskId, projectId },
+    select: { id: true },
+  });
+
+  if (!existingTask) {
+    return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
+
+  await db.task.delete({
+    where: { id: taskId },
+  });
 
   return new NextResponse(null, { status: 204 });
 }

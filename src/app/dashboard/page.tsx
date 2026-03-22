@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import TaskForm from "@/components/TaskForm";
 import ProjectForm from "@/components/ProjectForm";
 import MembersPanel from "@/components/MembersPanel";
@@ -22,13 +23,29 @@ type Task = {
   status: "TODO" | "IN_PROGRESS" | "DONE";
   priority: "LOW" | "MEDIUM" | "HIGH";
   dueDate?: string | null;
+  assignee?: {
+    id: string;
+    name: string | null;
+    email: string;
+  } | null;
 };
 
 export default function DashboardPage() {
+  // PHASE 3:
+  // Protect the dashboard page on the frontend using NextAuth session state.
+  // This prevents unauthenticated users from interacting with the dashboard UI.
+  const { status } = useSession();
+  const router = useRouter();
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // PHASE 3:
+  // Added a page-level error state so failed project/task requests
+  // do not fail silently.
+  const [error, setError] = useState("");
 
   // Controls visibility of the ProjectForm card
   const [showProjectForm, setShowProjectForm] = useState(false);
@@ -40,30 +57,68 @@ export default function DashboardPage() {
   // needed to pass currentUserRole to MembersPanel
   const activeProject = projects.find((p) => p.id === activeProjectId) ?? null;
 
+  // PHASE 3:
+  // Redirect unauthenticated users to the login page.
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
+
   // Extracted to a named function so it can be
   // called both on mount and after creating a new project
   async function loadProjects() {
+    setError("");
+    setLoading(true);
+
     try {
       const res = await fetch("/api/projects");
       const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to load projects");
+      }
+
       const list: Project[] = data.projects ?? [];
       setProjects(list);
-      if (list.length > 0 && !activeProjectId) setActiveProjectId(list[0].id);
+
+      if (list.length > 0 && !activeProjectId) {
+        setActiveProjectId(list[0].id);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to load projects"
+      );
+      setProjects([]);
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadProjects();
-  }, []);
+    // PHASE 3:
+    // Only load dashboard data after authentication is confirmed.
+    if (status === "authenticated") {
+      loadProjects();
+    }
+  }, [status]);
 
   async function loadTasks(projectId: string) {
+    setError("");
     setLoading(true);
+
     try {
       const res = await fetch(`/api/projects/${projectId}/tasks`);
       const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to load tasks");
+      }
+
       setTasks(data.tasks ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load tasks");
+      setTasks([]);
     } finally {
       setLoading(false);
     }
@@ -71,19 +126,37 @@ export default function DashboardPage() {
 
   // Resets activeTab to "tasks" when switching projects
   useEffect(() => {
+    if (status !== "authenticated") return;
+
     if (activeProjectId) {
       loadTasks(activeProjectId);
       setActiveTab("tasks");
     } else {
       setTasks([]);
     }
-  }, [activeProjectId]);
+  }, [activeProjectId, status]);
+
+  // PHASE 3:
+  // Show auth loading state before rendering the dashboard.
+  if (status === "loading") {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-lg text-slate-500">Checking session...</p>
+      </div>
+    );
+  }
+
+  // PHASE 3:
+  // Prevent rendering while redirecting unauthenticated users.
+  if (status === "unauthenticated") {
+    return null;
+  }
 
   // ED : Loading state so the app wont render empty UI while fetching projects on initial load.
   if (loading && projects.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-slate-500 text-lg">Loading dashboard...</p>
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-lg text-slate-500">Loading dashboard...</p>
       </div>
     );
   }
@@ -115,6 +188,14 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* PHASE 3:
+              Show dashboard-level fetch errors clearly to the user. */}
+          {error ? (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </p>
+          ) : null}
+
           {/* ProjectForm is only rendered when showProjectForm is true.
               After creating a project, hides the form and refreshes the project list. */}
           {showProjectForm && (
@@ -139,7 +220,7 @@ export default function DashboardPage() {
           {activeProjectId && activeProject ? (
             <div className="space-y-4">
               {/* Tab switcher between Tasks and Members views */}
-              <div className="flex gap-1 rounded-xl border bg-white p-1 w-fit">
+              <div className="flex w-fit gap-1 rounded-xl border bg-white p-1">
                 <button
                   onClick={() => setActiveTab("tasks")}
                   className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${

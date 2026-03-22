@@ -27,14 +27,21 @@ export default function MembersPanel({ projectId, currentUserRole }: Props) {
     const isOwner = currentUserRole === "OWNER";
 
     async function loadMembers() {
-        try {
-            const res = await fetch(`/api/projects/${projectId}/members`);
-            const data = await res.json();
-            setMembers(data.members ?? []);
-        } finally {
-            setLoading(false);
-        }
+  try {
+    const res = await fetch(`/api/projects/${projectId}/members`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to load members");
     }
+
+    setMembers(data.members ?? []);
+  } catch {
+    setMembers([]);
+  } finally {
+    setLoading(false);
+  }
+}
 
     useEffect(() => {
         loadMembers();

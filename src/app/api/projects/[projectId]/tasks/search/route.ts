@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertProjectMember } from "@/lib/project-auth";
+import { taskSearchSchema } from "@/lib/validators";
 
 type Params = { params: Promise<{ projectId: string }> };
 
@@ -18,34 +19,41 @@ export async function GET(req: Request, { params }: Params) {
   if (error) return error;
 
   const { searchParams } = new URL(req.url);
-  const query = searchParams.get("q")?.trim();
-  const status = searchParams.get("status") ?? undefined;
-  const priority = searchParams.get("priority") ?? undefined;
+
+  // Validate incoming search query and optional filters
+  const parsed = taskSearchSchema.safeParse({
+    q: searchParams.get("q") ?? undefined,
+    status: searchParams.get("status") ?? undefined,
+    priority: searchParams.get("priority") ?? undefined,
+  });
 
   // q is required
-  if (!query) {
-    return NextResponse.json(
-      { error: "Missing search query. Use ?q=your+search+term" },
-      { status: 400 }
-    );
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
+
+  const { q, status, priority } = parsed.data;
 
   const tasks = await db.task.findMany({
     where: {
       projectId,
+
       // Combine text search with optional filters
-      ...(status && { status: status as "TODO" | "IN_PROGRESS" | "DONE" }),
-      ...(priority && { priority: priority as "LOW" | "MEDIUM" | "HIGH" }),
+      ...(status && { status }),
+      ...(priority && { priority }),
+
       OR: [
         // Search in task title
-        { title: { contains: query } },
+        { title: { contains: q } },
+
         // Search in task description
-        { description: { contains: query } },
+        { description: { contains: q } },
+
         // Search by assignee name
         {
-          assignees: {
-            some: {
-              user: { name: { contains: query } },
+          assignee: {
+            is: {
+              name: { contains: q },
             },
           },
         },
@@ -62,12 +70,8 @@ export async function GET(req: Request, { params }: Params) {
       projectId: true,
       createdAt: true,
       updatedAt: true,
-      assignees: {
-        select: {
-          taskId: true,
-          userId: true,
-          user: { select: { id: true, name: true, email: true } },
-        },
+      assignee: {
+        select: { id: true, name: true, email: true },
       },
       _count: { select: { comments: true } },
     },

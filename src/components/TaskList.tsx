@@ -2,9 +2,14 @@ type Task = {
   id: string;
   title: string;
   description?: string | null;
-  status: string;
-  priority: string;
+  status: "TODO" | "IN_PROGRESS" | "DONE";
+  priority: "LOW" | "MEDIUM" | "HIGH";
   dueDate?: string | null;
+  assignee?: {
+    id: string;
+    name: string | null;
+    email: string;
+  } | null;
 };
 
 export default function TaskList({
@@ -14,8 +19,13 @@ export default function TaskList({
   tasks: Task[];
   loading: boolean;
 }) {
-  if (loading) return <p className="mt-6 text-slate-500">Loading tasks...</p>;
-  if (tasks.length === 0) return <p className="mt-6 text-slate-500">No tasks yet.</p>;
+  if (loading) {
+    return <p className="mt-6 text-slate-500">Loading tasks...</p>;
+  }
+
+  if (tasks.length === 0) {
+    return <p className="mt-6 text-slate-500">No tasks yet.</p>;
+  }
 
   return (
     <div className="mt-6 space-y-4">
@@ -24,16 +34,18 @@ export default function TaskList({
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="font-semibold">{task.title}</h2>
+
               {task.description ? (
                 <p className="mt-1 text-sm text-slate-600">{task.description}</p>
               ) : null}
             </div>
+
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium">
               {task.priority}
             </span>
           </div>
 
-          <div className="mt-3 flex gap-2 text-xs text-slate-500">
+          <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
             <span>Status: {task.status}</span>
             <span>•</span>
             <span>
@@ -41,6 +53,13 @@ export default function TaskList({
               {task.dueDate
                 ? new Date(task.dueDate).toLocaleDateString()
                 : "None"}
+            </span>
+            <span>•</span>
+            <span>
+              Assignee:{" "}
+              {task.assignee
+                ? task.assignee.name ?? task.assignee.email
+                : "Unassigned"}
             </span>
           </div>
         </article>

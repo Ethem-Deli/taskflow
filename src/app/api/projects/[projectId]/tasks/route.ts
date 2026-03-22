@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { projectTaskSchema, taskFilterSchema } from "@/lib/validators"; // Added taskFilterSchema to validate query params
+import { projectTaskSchema, taskFilterSchema } from "@/lib/validators";
 import { assertProjectMember } from "@/lib/project-auth";
 
 
 type Params = { params: Promise<{ projectId: string }> };
 
 const assigneeSelect = {
-  user: { select: { id: true, name: true, email: true } },
+  select: { id: true, name: true, email: true },
 };
 
 export async function GET(req: Request, { params }: Params) {
@@ -55,7 +55,7 @@ export async function GET(req: Request, { params }: Params) {
       ...(priority && { priority }),
     },
     include: {
-      assignees: { include: assigneeSelect },
+      assignee: assigneeSelect,
       _count: { select: { comments: true } },
     },
     orderBy: { createdAt: "desc" },
@@ -82,17 +82,19 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { assigneeIds, ...taskData } = parsed.data;
+  const { assigneeId, ...taskData } = parsed.data;
 
-  if (assigneeIds.length > 0) {
-    const memberIds = await db.projectMember
-      .findMany({ where: { projectId }, select: { userId: true } })
-      .then((rows) => rows.map((r) => r.userId));
+  if (assigneeId) {
+    const member = await db.projectMember.findUnique({
+      where: {
+        projectId_userId: { projectId, userId: assigneeId },
+      },
+      select: { userId: true },
+    });
 
-    const invalid = assigneeIds.filter((id) => !memberIds.includes(id));
-    if (invalid.length > 0) {
+    if (!member) {
       return NextResponse.json(
-        { error: "One or more assignees are not members of this project" },
+        { error: "Assignee is not a member of this project" },
         { status: 400 },
       );
     }
@@ -104,18 +106,19 @@ export async function POST(req: Request, { params }: Params) {
       status: taskData.status ?? "TODO",
       dueDate: taskData.dueDate ? new Date(taskData.dueDate) : null,
       projectId,
-      assignees: {
-        create: assigneeIds.map((userId) => ({ userId })),
-      },
+      assigneeId: assigneeId ?? null,
     },
-    include: { assignees: { include: assigneeSelect } },
+    include: {
+      assignee: assigneeSelect,
+      _count: { select: { comments: true } },
+    },
   });
 
   return NextResponse.json(
-  {
-    task,
-    message: "Task created successfully",
-  },
-  { status: 201 },
-);
+    {
+      task,
+      message: "Task created successfully",
+    },
+    { status: 201 },
+  );
 }

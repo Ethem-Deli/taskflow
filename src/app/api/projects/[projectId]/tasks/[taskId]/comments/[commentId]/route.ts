@@ -18,10 +18,10 @@ export async function DELETE(_req: Request, { params }: Params) {
     if (error) return error;
 
     // Check if comment exists and belongs to the task
-    const comment = await db.comment.findUnique({
-        where: { id: commentId, taskId },
-        select: { id: true, userId: true },
-    });
+    const comment = await db.comment.findFirst({
+  where: { id: commentId, taskId },
+  select: { id: true, userId: true },
+});
 
     if (!comment) {
         return NextResponse.json({ error: "Comment not found" }, { status: 404 });

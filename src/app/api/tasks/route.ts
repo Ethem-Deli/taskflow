@@ -19,12 +19,15 @@ export async function GET() {
       },
     },
     include: {
-      assignees: {
-        include: {
-          user: { select: { id: true, name: true, email: true } },
-        },
+      assignee: {
+        select: { id: true, name: true, email: true },
       },
-      project: { select: { id: true, name: true } },
+      project: {
+        select: { id: true, name: true },
+      },
+      _count: {
+        select: { comments: true },
+      },
     },
     orderBy: { createdAt: "desc" },
   });

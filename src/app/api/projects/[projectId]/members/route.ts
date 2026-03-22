@@ -23,7 +23,7 @@ export async function GET(_req: Request, { params }: Params) {
     include: {
       user: { select: { id: true, name: true, email: true } },
     },
-    orderBy: { joinedAt: "asc" },
+    orderBy: { createdAt: "asc" },
   });
 
   return NextResponse.json({
@@ -32,7 +32,7 @@ export async function GET(_req: Request, { params }: Params) {
       name: m.user.name,
       email: m.user.email,
       role: m.role,
-      joinedAt: m.joinedAt,
+      joinedAt: m.createdAt,
     })),
   });
 }
@@ -89,7 +89,7 @@ export async function POST(req: Request, { params }: Params) {
       name: user.name,
       email: user.email,
       role: membership.role,
-      joinedAt: membership.joinedAt,
+      joinedAt: membership.createdAt,
     },
     message: "Member added successfully",
   },

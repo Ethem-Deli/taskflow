@@ -29,7 +29,7 @@ export const projectTaskSchema = z.object({
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]),
   status: z.enum(["TODO", "IN_PROGRESS", "DONE"]).optional(),
   dueDate: z.string().optional(),
-  assigneeIds: z.array(z.string()).optional().default([]),
+  assigneeId: z.string().optional(),
 });
 
 export const updateProjectTaskSchema = projectTaskSchema.partial();
