@@ -4,6 +4,7 @@ import { cleanDatabase, testDb } from "../helpers/db";
 import { createUser, createProject, addMember } from "../helpers/fixtures";
 
 jest.mock("@/lib/auth", () => ({ authOptions: {} }));
+
 jest.mock("next-auth", () => ({
   __esModule: true,
   default: jest.fn(),
@@ -11,6 +12,7 @@ jest.mock("next-auth", () => ({
 }));
 
 import { getServerSession } from "next-auth";
+
 const mockSession = getServerSession as jest.Mock;
 
 function asSession(userId: string) {
@@ -45,9 +47,6 @@ afterAll(async () => {
   await testDb.$disconnect();
 });
 
-// ---------------------------------------------------------------------------
-// GET /api/projects/[projectId]/members
-// ---------------------------------------------------------------------------
 describe("GET /api/projects/[projectId]/members", () => {
   it("returns 401 when not authenticated", async () => {
     asNoSession();
@@ -59,11 +58,13 @@ describe("GET /api/projects/[projectId]/members", () => {
     const owner = await createUser("owner@example.com");
     const stranger = await createUser("stranger@example.com");
     const project = await createProject(owner.id);
+
     asSession(stranger.id);
     const res = await GET(
       makeRequest(`http://localhost/api/projects/${project.id}/members`),
       memberListParams(project.id)
     );
+
     expect(res.status).toBe(403);
   });
 
@@ -71,24 +72,28 @@ describe("GET /api/projects/[projectId]/members", () => {
     const owner = await createUser("owner@example.com");
     const member = await createUser("member@example.com");
     const project = await createProject(owner.id);
+
     await addMember(project.id, member.id);
+
     asSession(owner.id);
     const res = await GET(
       makeRequest(`http://localhost/api/projects/${project.id}/members`),
       memberListParams(project.id)
     );
+
     expect(res.status).toBe(200);
+
     const { members } = await res.json();
+
     expect(members).toHaveLength(2);
+
     const roles = members.map((m: { role: string }) => m.role);
+
     expect(roles).toContain("OWNER");
     expect(roles).toContain("MEMBER");
   });
 });
 
-// ---------------------------------------------------------------------------
-// POST /api/projects/[projectId]/members  (invite by email)
-// ---------------------------------------------------------------------------
 describe("POST /api/projects/[projectId]/members", () => {
   it("returns 401 when not authenticated", async () => {
     asNoSession();
@@ -104,7 +109,9 @@ describe("POST /api/projects/[projectId]/members", () => {
     const member = await createUser("member@example.com");
     const invitee = await createUser("invitee@example.com");
     const project = await createProject(owner.id);
+
     await addMember(project.id, member.id);
+
     asSession(member.id);
     const res = await POST(
       makeRequest(`http://localhost/api/projects/${project.id}/members`, "POST", {
@@ -112,6 +119,7 @@ describe("POST /api/projects/[projectId]/members", () => {
       }),
       memberListParams(project.id)
     );
+
     expect(res.status).toBe(403);
   });
 
@@ -119,6 +127,7 @@ describe("POST /api/projects/[projectId]/members", () => {
     const owner = await createUser("owner@example.com");
     const invitee = await createUser("invitee@example.com", "Invitee");
     const project = await createProject(owner.id);
+
     asSession(owner.id);
     const res = await POST(
       makeRequest(`http://localhost/api/projects/${project.id}/members`, "POST", {
@@ -126,8 +135,11 @@ describe("POST /api/projects/[projectId]/members", () => {
       }),
       memberListParams(project.id)
     );
+
     expect(res.status).toBe(201);
+
     const { member } = await res.json();
+
     expect(member.email).toBe(invitee.email);
     expect(member.role).toBe("MEMBER");
   });
@@ -149,7 +161,9 @@ describe("POST /api/projects/[projectId]/members", () => {
     const owner = await createUser("owner@example.com");
     const member = await createUser("member@example.com");
     const project = await createProject(owner.id);
+
     await addMember(project.id, member.id);
+
     asSession(owner.id);
     const res = await POST(
       makeRequest(`http://localhost/api/projects/${project.id}/members`, "POST", {
@@ -157,28 +171,31 @@ describe("POST /api/projects/[projectId]/members", () => {
       }),
       memberListParams(project.id)
     );
+
     expect(res.status).toBe(409);
   });
 });
 
-// ---------------------------------------------------------------------------
-// DELETE /api/projects/[projectId]/members/[userId]
-// ---------------------------------------------------------------------------
 describe("DELETE /api/projects/[projectId]/members/[userId]", () => {
   it("removes a member and returns 204", async () => {
     const owner = await createUser("owner@example.com");
     const member = await createUser("member@example.com");
     const project = await createProject(owner.id);
+
     await addMember(project.id, member.id);
+
     asSession(owner.id);
     const res = await DELETE(
       makeRequest(`http://localhost/api/projects/${project.id}/members/${member.id}`, "DELETE"),
       memberParams(project.id, member.id)
     );
+
     expect(res.status).toBe(204);
+
     const membership = await testDb.projectMember.findFirst({
       where: { projectId: project.id, userId: member.id },
     });
+
     expect(membership).toBeNull();
   });
 
@@ -187,13 +204,16 @@ describe("DELETE /api/projects/[projectId]/members/[userId]", () => {
     const memberA = await createUser("a@example.com");
     const memberB = await createUser("b@example.com");
     const project = await createProject(owner.id);
+
     await addMember(project.id, memberA.id);
     await addMember(project.id, memberB.id);
+
     asSession(memberA.id);
     const res = await DELETE(
       makeRequest(`http://localhost/api/projects/${project.id}/members/${memberB.id}`, "DELETE"),
       memberParams(project.id, memberB.id)
     );
+
     expect(res.status).toBe(403);
   });
 });
