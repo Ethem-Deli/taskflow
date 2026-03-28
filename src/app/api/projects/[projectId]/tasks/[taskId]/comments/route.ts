@@ -18,28 +18,27 @@ export async function GET(_req: Request, { params }: Params) {
     const { error } = await assertProjectMember(projectId, session.user.id);
     if (error) return error;
 
-    // Check if task exists and belongs to the project
     const task = await db.task.findUnique({
         where: { id: taskId, projectId },
-        select: { id: true },
+        select: {
+            id: true,
+            comments: {
+                orderBy: { createdAt: "asc" },
+                select: {
+                    id: true,
+                    content: true,
+                    createdAt: true,
+                    user: { select: { id: true, name: true, email: true } },
+                },
+            },
+        },
     });
 
     if (!task) {
         return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
 
-    const comments = await db.comment.findMany({
-        where: { taskId },
-        orderBy: { createdAt: "asc" },
-        select: {
-            id: true,
-            content: true,
-            createdAt: true,
-            user: { select: { id: true, name: true, email: true } },
-        },
-    });
-
-    return NextResponse.json({ comments });
+    return NextResponse.json({ comments: task.comments });
 }
 
 export async function POST(req: Request, { params }: Params) {
@@ -53,7 +52,13 @@ export async function POST(req: Request, { params }: Params) {
     const { error } = await assertProjectMember(projectId, session.user.id);
     if (error) return error;
 
-    // Check if task exists and belongs to the project
+    const body = await req.json();
+    const parsed = commentSchema.safeParse(body);
+
+    if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+
     const task = await db.task.findUnique({
         where: { id: taskId, projectId },
         select: { id: true },
@@ -61,13 +66,6 @@ export async function POST(req: Request, { params }: Params) {
 
     if (!task) {
         return NextResponse.json({ error: "Task not found" }, { status: 404 });
-    }
-
-    const body = await req.json();
-    const parsed = commentSchema.safeParse(body);
-
-    if (!parsed.success) {
-        return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
 
     const comment = await db.comment.create({

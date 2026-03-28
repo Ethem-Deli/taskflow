@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { assertProjectMember } from "@/lib/project-auth";
 import { taskSearchSchema } from "@/lib/validators";
+import { assertProjectMember } from "@/lib/project-auth";
 
 type Params = { params: Promise<{ projectId: string }> };
 
@@ -27,7 +27,6 @@ export async function GET(req: Request, { params }: Params) {
     priority: searchParams.get("priority") ?? undefined,
   });
 
-  // q is required
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
@@ -51,9 +50,9 @@ export async function GET(req: Request, { params }: Params) {
 
         // Search by assignee name
         {
-          assignee: {
-            is: {
-              name: { contains: q },
+          assignees: {
+            some: {
+              user: { name: { contains: q } },
             },
           },
         },
@@ -70,8 +69,12 @@ export async function GET(req: Request, { params }: Params) {
       projectId: true,
       createdAt: true,
       updatedAt: true,
-      assignee: {
-        select: { id: true, name: true, email: true },
+      assignees: {
+        select: {
+          taskId: true,
+          userId: true,
+          user: { select: { id: true, name: true, email: true } },
+        },
       },
       _count: { select: { comments: true } },
     },
