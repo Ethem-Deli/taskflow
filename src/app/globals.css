@@ -66,3 +66,35 @@ button {
 button:hover {
   opacity: 0.96;
 }
+.task-form {
+  max-width: 400px;
+  padding: 20px;
+  background: #1e1e1e;
+  border-radius: 8px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 8px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background: #0070f3;
+  color: white;
+}
+
+.error-message {
+  color: red;
+}
+
+.success-message {
+  color: green;
+}

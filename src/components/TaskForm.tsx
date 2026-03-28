@@ -114,49 +114,77 @@ export default function TaskForm({ projectId, onCreated }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-2xl bg-white p-6 shadow-sm">
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-2xl bg-white p-6 shadow-sm"
+    >
       <h2 className="text-xl font-semibold">Create task</h2>
 
-      <div className="mt-4 space-y-3">
-        <input
-          type="text"
-          placeholder="Task title"
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-          className="w-full rounded-lg border p-3"
-          required
-        />
+      <div className="mt-4 space-y-4">
 
-        <textarea
-          placeholder="Description"
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-          className="min-h-28 w-full rounded-lg border p-3"
-        />
+        {/* TITLE */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-700">
+            Task Title
+          </label>
+          <input
+            type="text"
+            placeholder="Task title"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            className="w-full rounded-lg border p-3"
+            required
+          />
+        </div>
 
-        <select
-          value={form.priority}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              priority: e.target.value as "LOW" | "MEDIUM" | "HIGH",
-            })
-          }
-          className="w-full rounded-lg border p-3"
-        >
-          <option value="LOW">Low</option>
-          <option value="MEDIUM">Medium</option>
-          <option value="HIGH">High</option>
-        </select>
+        {/* DESCRIPTION */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-700">
+            Description
+          </label>
+          <textarea
+            placeholder="Description"
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            className="min-h-28 w-full rounded-lg border p-3"
+          />
+        </div>
 
-        <input
-          type="date"
-          value={form.dueDate}
-          onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-          className="w-full rounded-lg border p-3"
-        />
+        {/* PRIORITY */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-700">
+            Priority
+          </label>
+          <select
+            value={form.priority}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                priority: e.target.value as "LOW" | "MEDIUM" | "HIGH",
+              })
+            }
+            className="w-full rounded-lg border p-3"
+          >
+            <option value="LOW">Low</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="HIGH">High</option>
+          </select>
+        </div>
 
-        {/* Single-assignee dropdown aligned with Phase 1 backend */}
+        {/* DUE DATE */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-slate-700">
+            Due Date
+          </label>
+          <input
+            type="date"
+            value={form.dueDate}
+            onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+            className="w-full rounded-lg border p-3"
+          />
+        </div>
+
+        {/* ASSIGNEE */}
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
             Assignee
@@ -185,24 +213,34 @@ export default function TaskForm({ projectId, onCreated }: Props) {
         </div>
       </div>
 
+      {/* ERROR */}
       {error ? (
         <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
         </p>
       ) : null}
 
+      {/* SUCCESS */}
       {success ? (
         <p className="mt-3 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
           {success}
         </p>
       ) : null}
 
+      {/* BUTTON */}
       <button
         type="submit"
         disabled={loading}
-        className="mt-4 rounded-lg bg-slate-900 px-4 py-3 text-white disabled:opacity-60"
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-white disabled:opacity-60"
       >
-        {loading ? "Saving..." : "Add task"}
+        {loading ? (
+          <>
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+            Saving...
+          </>
+        ) : (
+          "Add task"
+        )}
       </button>
     </form>
   );

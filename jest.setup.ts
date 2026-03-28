@@ -3,3 +3,4 @@
 
 // Silence Prisma logs during tests
 process.env.DATABASE_URL = "file:./prisma/test.db";
+import "@testing-library/jest-dom";
