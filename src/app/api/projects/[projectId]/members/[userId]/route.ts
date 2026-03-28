@@ -24,6 +24,14 @@ export async function DELETE(_req: Request, { params }: Params) {
     );
   }
 
+  const membership = await db.projectMember.findUnique({
+    where: { projectId_userId: { projectId, userId } },
+  });
+
+  if (!membership) {
+    return NextResponse.json({ error: "User is not a member of this project" }, { status: 404 });
+  }
+
   await db.projectMember.delete({
     where: { projectId_userId: { projectId, userId } },
   });

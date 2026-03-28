@@ -17,11 +17,11 @@ export async function DELETE(_req: Request, { params }: Params) {
     const { error } = await assertProjectMember(projectId, session.user.id);
     if (error) return error;
 
-    // Check if comment exists and belongs to the task
+    // Check if comment exists, belongs to the task, and the task belongs to the project
     const comment = await db.comment.findFirst({
-  where: { id: commentId, taskId },
-  select: { id: true, userId: true },
-});
+        where: { id: commentId, task: { id: taskId, projectId } },
+        select: { id: true, userId: true },
+    });
 
     if (!comment) {
         return NextResponse.json({ error: "Comment not found" }, { status: 404 });
