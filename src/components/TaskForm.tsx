@@ -23,6 +23,20 @@ type TaskFormData = {
   assigneeId: string;
 };
 
+/*
+WEEK 5 UPDATE (Edeli)
+Improvements added this week:
+1. Improved error handling so validation errors from the API
+   (like {formErrors, fieldErrors}) do not cause React runtime errors.
+
+2. Extract readable error messages from API responses.
+
+3. Ensures only string messages are rendered in the UI.
+
+This prevents the Next.js runtime error:
+"Objects are not valid as a React child".
+*/
+
 export default function TaskForm({ projectId, onCreated }: Props) {
   const [form, setForm] = useState<TaskFormData>({
     title: "",
@@ -87,11 +101,37 @@ export default function TaskForm({ projectId, onCreated }: Props) {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(
-          typeof data.error === "string"
-            ? data.error
-            : "Failed to create task"
-        );
+
+        /*
+        WEEK 5 FIX(Edeli):
+        Handle validation errors returned as objects
+        Example:
+        {
+          error: {
+            formErrors: [],
+            fieldErrors: { title: ["Title is required"] }
+          }
+        }
+        */
+
+        if (typeof data.error === "string") {
+          setError(data.error);
+        } 
+        else if (data.error?.fieldErrors) {
+
+          const fieldErrors = Object.values(data.error.fieldErrors).flat();
+
+          if (fieldErrors.length > 0) {
+            setError(String(fieldErrors[0]));
+          } else {
+            setError("Failed to create task");
+          }
+
+        } 
+        else {
+          setError("Failed to create task");
+        }
+
         return;
       }
 

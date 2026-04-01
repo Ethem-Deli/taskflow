@@ -12,6 +12,22 @@ type Task = {
   } | null;
 };
 
+/*
+WEEK 5 UPDATE (Sprint Tasks - Ethem Deli)
+-----------------------------------------
+Added the following features:
+
+1. Kanban style task grouping (TODO / IN_PROGRESS / DONE)
+2. Status change buttons for tasks
+3. Task comments UI
+4. Minor UI improvements for task interaction
+
+These updates help improve task tracking and user interaction
+in the dashboard.
+*/
+
+import { useState } from "react";
+
 function getStatusColor(status: string) {
   switch (status) {
     case "TODO":
@@ -38,6 +54,47 @@ function getPriorityColor(priority: string) {
   }
 }
 
+/*
+WEEK 5: Simple comment component for tasks
+Allows users to add quick comments to tasks.
+*/
+function TaskComments() {
+  const [comments, setComments] = useState<string[]>([]);
+  const [text, setText] = useState("");
+
+  function addComment() {
+    if (!text) return;
+    setComments([...comments, text]);
+    setText("");
+  }
+
+  return (
+    <div className="mt-3">
+      <p className="text-xs font-semibold text-slate-600">Comments</p>
+
+      {comments.map((c, i) => (
+        <div key={i} className="text-xs bg-slate-100 rounded p-1 mt-1">
+          {c}
+        </div>
+      ))}
+
+      <input
+        className="border rounded text-xs p-1 w-full mt-1"
+        placeholder="Add comment..."
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+
+      <button
+        onClick={addComment}
+        className="text-xs bg-blue-500 text-white px-2 py-1 rounded mt-1"
+      >
+        Add Comment
+      </button>
+    </div>
+  );
+}
+
 export default function TaskList({
   tasks,
   loading,
@@ -45,6 +102,22 @@ export default function TaskList({
   tasks: Task[];
   loading: boolean;
 }) {
+  /*
+  WEEK 5: Function to update task status.
+  Allows users to move tasks between Kanban columns.
+  */
+  async function updateStatus(taskId: string, status: Task["status"]) {
+    await fetch(`/api/tasks/${taskId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status }),
+    });
+
+    window.location.reload();
+  }
+
   if (loading) {
     return <p className="mt-6 text-slate-500">Loading tasks...</p>;
   }
@@ -57,60 +130,122 @@ export default function TaskList({
     );
   }
 
+  /*
+  WEEK 5: Group tasks into Kanban columns
+  */
+  const todo = tasks.filter((t) => t.status === "TODO");
+  const inProgress = tasks.filter((t) => t.status === "IN_PROGRESS");
+  const done = tasks.filter((t) => t.status === "DONE");
+
+  function renderTask(task: Task) {
+    return (
+      <article key={task.id} className="rounded-xl border p-4 bg-white shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="font-semibold">{task.title}</h2>
+
+            {task.description ? (
+              <p className="mt-1 text-sm text-slate-600">
+                {task.description}
+              </p>
+            ) : null}
+          </div>
+
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-medium ${getPriorityColor(
+              task.priority
+            )}`}
+          >
+            {task.priority}
+          </span>
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+
+          <span
+            className={`rounded-full px-2 py-1 font-medium ${getStatusColor(
+              task.status
+            )}`}
+          >
+            {task.status}
+          </span>
+
+          <span>•</span>
+
+          <span>
+            Due:{" "}
+            {task.dueDate
+              ? new Date(task.dueDate).toLocaleDateString()
+              : "None"}
+          </span>
+
+          <span>•</span>
+
+          <span>
+            Assignee:{" "}
+            {task.assignee
+              ? task.assignee.name ?? task.assignee.email
+              : "Unassigned"}
+          </span>
+        </div>
+
+        {/* WEEK 5: Task status change buttons */}
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={() => updateStatus(task.id, "TODO")}
+            className="text-xs bg-yellow-200 px-2 py-1 rounded"
+          >
+            Todo
+          </button>
+
+          <button
+            onClick={() => updateStatus(task.id, "IN_PROGRESS")}
+            className="text-xs bg-blue-200 px-2 py-1 rounded"
+          >
+            Start
+          </button>
+
+          <button
+            onClick={() => updateStatus(task.id, "DONE")}
+            className="text-xs bg-green-200 px-2 py-1 rounded"
+          >
+            Done
+          </button>
+        </div>
+
+        {/* WEEK 5: Task comments */}
+        <TaskComments />
+      </article>
+    );
+  }
+
   return (
-    <div className="mt-6 space-y-4">
-      {tasks.map((task) => (
-        <article key={task.id} className="rounded-xl border p-4 bg-white shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="font-semibold">{task.title}</h2>
+    /*
+    WEEK 5: Converted task list into Kanban layout
+    */
+    <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
 
-              {task.description ? (
-                <p className="mt-1 text-sm text-slate-600">
-                  {task.description}
-                </p>
-              ) : null}
-            </div>
+      <div>
+        <h2 className="font-bold mb-3">To Do</h2>
+        <div className="space-y-4">
+          {todo.map(renderTask)}
+        </div>
+      </div>
 
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-medium ${getPriorityColor(
-                task.priority
-              )}`}
-            >
-              {task.priority}
-            </span>
-          </div>
+      <div>
+        <h2 className="font-bold mb-3">In Progress</h2>
+        <div className="space-y-4">
+          {inProgress.map(renderTask)}
+        </div>
+      </div>
 
-          <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+      <div>
+        <h2 className="font-bold mb-3">Done</h2>
+        <div className="space-y-4">
+          {done.map(renderTask)}
+        </div>
+      </div>
 
-            <span
-              className={`rounded-full px-2 py-1 font-medium ${getStatusColor(
-                task.status
-              )}`}
-            >
-              {task.status}
-            </span>
-
-            <span>•</span>
-
-            <span>
-              Due:{" "}
-              {task.dueDate
-                ? new Date(task.dueDate).toLocaleDateString()
-                : "None"}
-            </span>
-
-            <span>•</span>
-
-            <span>
-              Assignee:{" "}
-              {task.assignee
-                ? task.assignee.name ?? task.assignee.email
-                : "Unassigned"}
-            </span>
-          </div>
-        </article>
-      ))}
     </div>
   );
 }

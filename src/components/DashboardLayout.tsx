@@ -1,6 +1,13 @@
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen">
+    /*
+    WEEK 5 UPDATE
+    -------------
+    Improved dashboard responsiveness.
+    Layout now adapts better to smaller screens.
+    */
+    <div className="flex flex-col md:flex-row min-h-screen">
+
       {/* Sidebar */}
       <div className="hidden md:block w-64 bg-gray-900 text-white p-5"> {/* ED: Added padding to sidebar for better spacing */}
         <h2 className="text-xl font-bold mb-6">TaskFlow</h2>
