@@ -41,43 +41,31 @@ export async function GET(req: Request, { params }: Params) {
       ...(status && { status }),
       ...(priority && { priority }),
 
-      OR: [
-        // Search in task title
-        { title: { contains: q } },
+      // Only apply text search if q is provided
+      ...(q && {
+        OR: [
+          // Search in task title
+          { title: { contains: q } },
 
-        // Search in task description
-        { description: { contains: q } },
+          // Search in task description
+          { description: { contains: q } },
 
-        // Search by assignee name
-        {
-          assignees: {
-            some: {
-              user: { name: { contains: q } },
+          // Search by assignee name
+          {
+            assignee: {
+              name: { contains: q },
             },
           },
-        },
-      ],
+        ],
+      }),
     },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      status: true,
-      priority: true,
-      dueDate: true,
-      projectId: true,
-      createdAt: true,
-      updatedAt: true,
-      assignees: {
-        select: {
-          taskId: true,
-          userId: true,
-          user: { select: { id: true, name: true, email: true } },
-        },
+    include: {
+      assignee: {
+        select: { id: true, name: true, email: true },
       },
       _count: { select: { comments: true } },
     },
+    orderBy: { createdAt: "desc" },
   });
 
   return NextResponse.json({ tasks, total: tasks.length });

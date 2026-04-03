@@ -56,7 +56,8 @@ export const taskSearchSchema = z.object({
   q: z
     .string()
     .min(1, "Search query cannot be empty")
-    .max(100, "Search query is too long"),
+    .max(100, "Search query is too long")
+    .optional(),
   status: z.enum(["TODO", "IN_PROGRESS", "DONE"]).optional(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
 });

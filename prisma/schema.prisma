@@ -19,6 +19,8 @@ model User {
   comments        Comment[]
   projectMembers  ProjectMember[]
   ownedProjects   Project[]       @relation("ProjectOwner")
+
+  @@index([createdAt])
 }
 
 model Project {
@@ -33,12 +35,15 @@ model Project {
 
   tasks       Task[]
   members     ProjectMember[]
+
+  @@index([ownerId])
+  @@index([createdAt])
 }
 
 model ProjectMember {
-  id        String   @id @default(cuid())
-  role      String   @default("MEMBER")
-  createdAt DateTime @default(now())
+  id        String         @id @default(cuid())
+  role      ProjectRole    @default(MEMBER)
+  createdAt DateTime       @default(now())
 
   projectId String
   userId    String
@@ -47,6 +52,9 @@ model ProjectMember {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, userId])
+  @@index([userId])
+  @@index([projectId])
+  @@index([createdAt])
 }
 
 model Task {
@@ -66,6 +74,21 @@ model Task {
   assignee     User?        @relation("AssignedTasks", fields: [assigneeId], references: [id])
 
   comments     Comment[]
+
+  // Foreign key indexes
+  @@index([projectId])
+  @@index([assigneeId])
+  
+  // Filtering indexes
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+  @@index([dueDate])
+  
+  // Composite indexes for common queries
+  @@index([projectId, status])
+  @@index([projectId, priority])
+  @@index([projectId, createdAt])
 }
 
 model Comment {
@@ -78,6 +101,16 @@ model Comment {
 
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Foreign key indexes
+  @@index([taskId])
+  @@index([userId])
+  
+  // Sorting index
+  @@index([createdAt])
+  
+  // Composite index for fetching comments with sort
+  @@index([taskId, createdAt])
 }
 
 enum TaskStatus {
@@ -90,4 +123,9 @@ enum TaskPriority {
   LOW
   MEDIUM
   HIGH
+}
+
+enum ProjectRole {
+  OWNER
+  MEMBER
 }

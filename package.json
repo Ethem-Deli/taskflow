@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "db:test-queries": "npx tsx prisma/test-queries.ts",
+    "db:seed": "npx tsx prisma/seed-migrate.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -36,6 +38,7 @@
     "prisma": "^6.19.2",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }
