@@ -26,7 +26,7 @@ These updates help improve task tracking and user interaction
 in the dashboard.
 */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -39,6 +39,14 @@ function getStatusColor(status: string) {
     default:
       return "bg-slate-100 text-slate-700";
   }
+}
+
+function formatStatus(status: string): string {
+  return status.replace(/_/g, " ");
+}
+
+function formatPriority(priority: string): string {
+  return priority.charAt(0) + priority.slice(1).toLowerCase();
 }
 
 function getPriorityColor(priority: string) {
@@ -98,31 +106,58 @@ function TaskComments() {
 export default function TaskList({
   tasks,
   loading,
+  projectId,
 }: {
   tasks: Task[];
   loading: boolean;
+  projectId: string;
 }) {
+  const [localTasks, setLocalTasks] = useState(tasks);
+
   /*
   WEEK 5: Function to update task status.
   Allows users to move tasks between Kanban columns.
   */
   async function updateStatus(taskId: string, status: Task["status"]) {
-    await fetch(`/api/tasks/${taskId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ status }),
-    });
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      });
 
-    window.location.reload();
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Error updating task:", data);
+        alert(`Failed to update task: ${data.error || "Unknown error"}`);
+        return;
+      }
+
+      // Update local state instead of reloading
+      setLocalTasks(prevTasks =>
+        prevTasks.map(t =>
+          t.id === taskId ? { ...t, status } : t
+        )
+      );
+    } catch (error) {
+      console.error("Error updating task status:", error);
+      alert("Failed to update task status");
+    }
   }
+
+  // Sync local tasks with props when tasks change
+  useEffect(() => {
+    setLocalTasks(tasks);
+  }, [tasks]);
 
   if (loading) {
     return <p className="mt-6 text-slate-500">Loading tasks...</p>;
   }
 
-  if (tasks.length === 0) {
+  if (localTasks.length === 0) {
     return (
       <div className="mt-6 rounded-xl border border-dashed p-6 text-center text-slate-500">
         No tasks created yet. Start by adding a new task.
@@ -133,9 +168,9 @@ export default function TaskList({
   /*
   WEEK 5: Group tasks into Kanban columns
   */
-  const todo = tasks.filter((t) => t.status === "TODO");
-  const inProgress = tasks.filter((t) => t.status === "IN_PROGRESS");
-  const done = tasks.filter((t) => t.status === "DONE");
+  const todo = localTasks.filter((t) => t.status === "TODO");
+  const inProgress = localTasks.filter((t) => t.status === "IN_PROGRESS");
+  const done = localTasks.filter((t) => t.status === "DONE");
 
   function renderTask(task: Task) {
     return (
@@ -156,7 +191,7 @@ export default function TaskList({
               task.priority
             )}`}
           >
-            {task.priority}
+            {formatPriority(task.priority)}
           </span>
         </div>
 
@@ -167,7 +202,7 @@ export default function TaskList({
               task.status
             )}`}
           >
-            {task.status}
+            {formatStatus(task.status)}
           </span>
 
           <span>•</span>
@@ -214,7 +249,7 @@ export default function TaskList({
         </div>
 
         {/* WEEK 5: Task comments */}
-        <TaskComments />
+        <TaskComments taskId={task.id} projectId={projectId} />
       </article>
     );
   }

@@ -9,6 +9,7 @@ import MembersPanel from "@/components/MembersPanel";
 import DashboardLayout from "@/components/DashboardLayout"; // ED: Import layout component
 import TaskList from "@/components/TaskList";
 import ProjectList from "@/components/ProjectList";
+import TaskFilter from "@/components/TaskFilter";
 
 type Project = {
   id: string;
@@ -41,6 +42,11 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [activeTab, setActiveTab] = useState<"tasks" | "members">("tasks");
+  const [filters, setFilters] = useState({
+    search: "",
+    status: "" as "TODO" | "IN_PROGRESS" | "DONE" | "",
+    priority: "" as "LOW" | "MEDIUM" | "HIGH" | "",
+  });
 
   const activeProject = projects.find((p) => p.id === activeProjectId) ?? null;
 
@@ -84,12 +90,35 @@ export default function DashboardPage() {
     }
   }, [status, loadProjects]);
 
-  async function loadTasks(projectId: string) {
+  async function loadTasks(projectId: string, appliedFilters?: typeof filters) {
     setError("");
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/projects/${projectId}/tasks`);
+      const filtersToUse = appliedFilters || filters;
+      const queryParams = new URLSearchParams();
+
+      if (filtersToUse.search && filtersToUse.search.trim().length > 0) {
+        queryParams.append("q", filtersToUse.search);
+      }
+      if (filtersToUse.status) {
+        queryParams.append("status", filtersToUse.status);
+      }
+      if (filtersToUse.priority) {
+        queryParams.append("priority", filtersToUse.priority);
+      }
+
+      // Use search endpoint if there are any filters, otherwise use regular endpoint
+      const hasFilters = filtersToUse.search?.trim() || filtersToUse.status || filtersToUse.priority;
+      const endpoint = hasFilters
+        ? `/api/projects/${projectId}/tasks/search`
+        : `/api/projects/${projectId}/tasks`;
+
+      const fullUrl = Array.from(queryParams).length > 0 
+        ? `${endpoint}?${queryParams}`
+        : endpoint;
+
+      const res = await fetch(fullUrl);
       const data = await res.json();
 
       if (!res.ok) {
@@ -104,6 +133,13 @@ export default function DashboardPage() {
       setLoading(false);
     }
   }
+
+  const handleFilter = (newFilters: typeof filters) => {
+    setFilters(newFilters);
+    if (activeProjectId) {
+      loadTasks(activeProjectId, newFilters);
+    }
+  };
 
   // Reset tasks and tab when switching projects
   useEffect(() => {
@@ -208,14 +244,17 @@ export default function DashboardPage() {
 
               {activeTab === "tasks" && (
                 <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
-                  <TaskForm
-                    projectId={activeProjectId}
-                    onCreated={() => loadTasks(activeProjectId)}
-                  />
+                  <div className="space-y-4">
+                    <TaskForm
+                      projectId={activeProjectId}
+                      onCreated={() => loadTasks(activeProjectId)}
+                    />
+                    <TaskFilter onFilter={handleFilter} />
+                  </div>
 
                   <section className="rounded-2xl bg-white p-6 shadow-sm">
                     <p className="mt-1 text-slate-600">All tasks in one place.</p>
-                    <TaskList tasks={tasks} loading={loading} />
+                    <TaskList tasks={tasks} loading={loading} projectId={activeProjectId} />
                   </section>
                 </div>
               )}
