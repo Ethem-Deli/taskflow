@@ -1,27 +1,44 @@
+import Link from "next/link";
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    /*
-    WEEK 5 UPDATE
-    -------------
-    Improved dashboard responsiveness.
-    Layout now adapts better to smaller screens.
-    */
-    <div className="flex flex-col md:flex-row min-h-screen">
-
+    <div className="flex min-h-screen flex-col md:flex-row">
       {/* Sidebar */}
-      <div className="hidden md:block w-64 bg-gray-900 text-white p-5"> {/* ED: Added padding to sidebar for better spacing */}
-        <h2 className="text-xl font-bold mb-6">TaskFlow</h2>
-        <ul className="space-y-2">
-          <li className="hover:text-gray-300 cursor-pointer">Dashboard</li>
-          <li className="hover:text-gray-300 cursor-pointer">Projects</li>
-          <li className="hover:text-gray-300 cursor-pointer">Tasks</li>
-        </ul>
+      <div className="hidden w-64 bg-gray-900 p-5 text-white md:block">
+        <h2 className="mb-6 text-xl font-bold">TaskFlow</h2>
+
+        <nav>
+          <ul className="space-y-2">
+            <li>
+              <Link
+                href="/dashboard"
+                className="block rounded px-2 py-2 transition hover:bg-gray-800 hover:text-gray-300"
+              >
+                Dashboard
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/projects"
+                className="block rounded px-2 py-2 transition hover:bg-gray-800 hover:text-gray-300"
+              >
+                Projects
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/tasks"
+                className="block rounded px-2 py-2 transition hover:bg-gray-800 hover:text-gray-300"
+              >
+                Tasks
+              </Link>
+            </li>
+          </ul>
+        </nav>
       </div>
 
       {/* Main content */}
-      <div className="flex-1 p-6 bg-gray-100">
-        {children}
-      </div>
+      <div className="flex-1 bg-gray-100 p-6">{children}</div>
     </div>
   );
 }
