@@ -42,3 +42,7 @@ updatemade.txt
 next-env.d.ts
 
 /src/generated/prisma
+
+*.db
+prisma/dev.db
+prisma/prisma/dev.db
