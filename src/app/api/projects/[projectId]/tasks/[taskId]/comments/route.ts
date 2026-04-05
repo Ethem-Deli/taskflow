@@ -7,7 +7,7 @@ import { commentSchema } from "@/lib/validators";
 
 type Params = { params: Promise<{ projectId: string; taskId: string }> };
 
-export async function GET(_req: Request, { params }: Params) {
+export async function GET(req: Request, { params }: Params) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
@@ -20,25 +20,41 @@ export async function GET(_req: Request, { params }: Params) {
 
     const task = await db.task.findUnique({
         where: { id: taskId, projectId },
-        select: {
-            id: true,
-            comments: {
-                orderBy: { createdAt: "asc" },
-                select: {
-                    id: true,
-                    content: true,
-                    createdAt: true,
-                    user: { select: { id: true, name: true, email: true } },
-                },
-            },
-        },
+        select: { id: true },
     });
 
     if (!task) {
         return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ comments: task.comments });
+    const url = new URL(req.url);
+    const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10));
+    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get("limit") ?? "20", 10)));
+    const skip = (page - 1) * limit;
+
+    const [comments, total] = await Promise.all([
+        db.comment.findMany({
+            where: { taskId },
+            orderBy: { createdAt: "asc" },
+            skip,
+            take: limit,
+            select: {
+                id: true,
+                content: true,
+                createdAt: true,
+                user: { select: { id: true, name: true, email: true } },
+            },
+        }),
+        db.comment.count({ where: { taskId } }),
+    ]);
+
+    return NextResponse.json({
+        comments,
+        total,
+        page,
+        limit,
+        hasMore: skip + comments.length < total,
+    });
 }
 
 export async function POST(req: Request, { params }: Params) {
@@ -56,7 +72,7 @@ export async function POST(req: Request, { params }: Params) {
     const parsed = commentSchema.safeParse(body);
 
     if (!parsed.success) {
-        return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+        return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
     }
 
     const task = await db.task.findUnique({

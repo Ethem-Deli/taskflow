@@ -75,7 +75,7 @@ export default function ProjectForm({ onCreated }: Props) {
             <button
                 type="submit"
                 disabled={loading}
-                className="mt-4 rounded-lg bg-slate-900 px-4 py-3 text-white disabled:opacity-60"
+                className="mt-4 w-full rounded-lg bg-slate-900 px-4 py-3 text-white disabled:opacity-60"
             >
                 {loading ? "Saving..." : "Create project"}
             </button>
