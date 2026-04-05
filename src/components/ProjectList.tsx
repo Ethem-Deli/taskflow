@@ -18,7 +18,7 @@ export default function ProjectList({
         <button
           key={p.id}
           onClick={() => setActiveProjectId(p.id)}
-          className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+          className={`cursor-pointer whitespace-nowrap rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
             activeProjectId === p.id
               ? "bg-slate-900 text-white"
               : "border text-slate-600 hover:bg-slate-50"

@@ -81,7 +81,7 @@ export default function TaskList({
   */
   async function updateStatus(taskId: string, status: Task["status"]) {
     try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
+      const response = await fetch(`/api/projects/${projectId}/tasks/${taskId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -189,21 +189,21 @@ export default function TaskList({
         <div className="flex gap-2 mt-3">
           <button
             onClick={() => updateStatus(task.id, "TODO")}
-            className="text-xs bg-yellow-200 px-2 py-1 rounded"
+            className="text-xs bg-yellow-200 px-2 py-1 rounded cursor-pointer"
           >
             Todo
           </button>
 
           <button
             onClick={() => updateStatus(task.id, "IN_PROGRESS")}
-            className="text-xs bg-blue-200 px-2 py-1 rounded"
+            className="text-xs bg-blue-200 px-2 py-1 rounded cursor-pointer"
           >
             Start
           </button>
 
           <button
             onClick={() => updateStatus(task.id, "DONE")}
-            className="text-xs bg-green-200 px-2 py-1 rounded"
+            className="text-xs bg-green-200 px-2 py-1 rounded cursor-pointer"
           >
             Done
           </button>

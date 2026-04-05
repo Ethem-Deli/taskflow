@@ -15,7 +15,7 @@ export async function GET(_req: Request, { params }: Params) {
   }
 
   const { projectId } = await params;
-  const { error } = await assertProjectMember(projectId, session.user.id);
+  const { membership, error } = await assertProjectMember(projectId, session.user.id);
   if (error) return error;
 
   const project = await db.project.findUnique({
@@ -27,7 +27,7 @@ export async function GET(_req: Request, { params }: Params) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ project });
+  return NextResponse.json({ project, role: membership!.role });
 }
 
 export async function PATCH(req: Request, { params }: Params) {

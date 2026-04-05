@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import TaskForm from "@/components/TaskForm";
-import ProjectForm from "@/components/ProjectForm";
 import MembersPanel from "@/components/MembersPanel";
 import DashboardLayout from "@/components/DashboardLayout"; // ED: Import layout component
 import TaskList from "@/components/TaskList";
@@ -40,8 +39,8 @@ export default function DashboardPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showProjectForm, setShowProjectForm] = useState(false);
   const [activeTab, setActiveTab] = useState<"tasks" | "members">("tasks");
+  const [showTaskForm, setShowTaskForm] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
     status: "" as "TODO" | "IN_PROGRESS" | "DONE" | "",
@@ -95,30 +94,19 @@ export default function DashboardPage() {
     setLoading(true);
 
     try {
-      const filtersToUse = appliedFilters || filters;
-      const queryParams = new URLSearchParams();
+      const f = appliedFilters ?? filters;
+      const hasFilters = f.search.trim() || f.status || f.priority;
+      const params = new URLSearchParams();
+      if (f.search.trim()) params.append("q", f.search);
+      if (f.status) params.append("status", f.status);
+      if (f.priority) params.append("priority", f.priority);
 
-      if (filtersToUse.search && filtersToUse.search.trim().length > 0) {
-        queryParams.append("q", filtersToUse.search);
-      }
-      if (filtersToUse.status) {
-        queryParams.append("status", filtersToUse.status);
-      }
-      if (filtersToUse.priority) {
-        queryParams.append("priority", filtersToUse.priority);
-      }
-
-      // Use search endpoint if there are any filters, otherwise use regular endpoint
-      const hasFilters = filtersToUse.search?.trim() || filtersToUse.status || filtersToUse.priority;
       const endpoint = hasFilters
         ? `/api/projects/${projectId}/tasks/search`
         : `/api/projects/${projectId}/tasks`;
+      const url = params.size > 0 ? `${endpoint}?${params}` : endpoint;
 
-      const fullUrl = Array.from(queryParams).length > 0 
-        ? `${endpoint}?${queryParams}`
-        : endpoint;
-
-      const res = await fetch(fullUrl);
+      const res = await fetch(url);
       const data = await res.json();
 
       if (!res.ok) {
@@ -136,9 +124,7 @@ export default function DashboardPage() {
 
   const handleFilter = (newFilters: typeof filters) => {
     setFilters(newFilters);
-    if (activeProjectId) {
-      loadTasks(activeProjectId, newFilters);
-    }
+    if (activeProjectId) loadTasks(activeProjectId, newFilters);
   };
 
   // Reset tasks and tab when switching projects
@@ -175,40 +161,14 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <main className="min-h-screen px-6 py-10">
-        <div className="mx-auto max-w-6xl space-y-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Dashboard</h1>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowProjectForm((prev) => !prev)}
-                className="rounded-lg border px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
-              >
-                {showProjectForm ? "Cancel" : "+ New project"}
-              </button>
-
-              <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="rounded-lg border px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
-              >
-                Sign out
-              </button>
-            </div>
-          </div>
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="space-y-6">
+          <h1 className="text-base font-semibold text-gray-900">Dashboard</h1>
 
           {error && (
             <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
               {error}
             </p>
-          )}
-
-          {showProjectForm && (
-            <ProjectForm
-              onCreated={() => {
-                setShowProjectForm(false);
-                loadProjects();
-              }}
-            />
           )}
 
           {projects.length > 0 && (
@@ -221,42 +181,46 @@ export default function DashboardPage() {
 
           {activeProjectId && activeProject ? (
             <div className="space-y-4">
-              <div className="flex w-fit gap-1 rounded-xl border bg-white p-1">
-                <button
-                  onClick={() => setActiveTab("tasks")}
-                  className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${activeTab === "tasks"
-                      ? "bg-slate-900 text-white"
-                      : "text-slate-600 hover:bg-slate-50"
-                    }`}
-                >
-                  Tasks
-                </button>
-                <button
-                  onClick={() => setActiveTab("members")}
-                  className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${activeTab === "members"
-                      ? "bg-slate-900 text-white"
-                      : "text-slate-600 hover:bg-slate-50"
-                    }`}
-                >
-                  Members
-                </button>
+              <div className="flex items-center gap-3">
+                <div className="flex w-fit gap-1 rounded-xl border bg-white p-1 mr-auto">
+                  <button
+                    onClick={() => setActiveTab("tasks")}
+                    className={`cursor-pointer rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${activeTab === "tasks"
+                        ? "bg-slate-900 text-white"
+                        : "text-slate-600 hover:bg-slate-50"
+                      }`}
+                  >
+                    Tasks
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("members")}
+                    className={`cursor-pointer rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${activeTab === "members"
+                        ? "bg-slate-900 text-white"
+                        : "text-slate-600 hover:bg-slate-50"
+                      }`}
+                  >
+                    Members
+                  </button>
+                </div>
+
+                {activeTab === "tasks" && (
+                  <button
+                    onClick={() => setShowTaskForm(true)}
+                    className="rounded-lg border px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 cursor-pointer"
+                  >
+                    + New task
+                  </button>
+                )}
               </div>
 
               {activeTab === "tasks" && (
-                <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
-                  <div className="space-y-4">
-                    <TaskForm
-                      projectId={activeProjectId}
-                      onCreated={() => loadTasks(activeProjectId)}
-                    />
-                    <TaskFilter onFilter={handleFilter} />
-                  </div>
-
+                <>
+                  <TaskFilter horizontal onFilter={handleFilter} />
                   <section className="rounded-2xl bg-white p-6 shadow-sm">
                     <p className="mt-1 text-slate-600">All tasks in one place.</p>
                     <TaskList tasks={tasks} loading={loading} projectId={activeProjectId} />
                   </section>
-                </div>
+                </>
               )}
 
               {activeTab === "members" && (
@@ -274,7 +238,27 @@ export default function DashboardPage() {
             </p>
           )}
         </div>
-      </main>
+      </div>
+
+      {showTaskForm && activeProjectId && (
+        <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/40" onClick={() => setShowTaskForm(false)}>
+          <div className="relative w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setShowTaskForm(false)}
+              className="absolute top-4 right-4 z-10 text-gray-400 hover:text-gray-600 cursor-pointer text-lg leading-none"
+            >
+              &times;
+            </button>
+            <TaskForm
+              projectId={activeProjectId}
+              onCreated={() => {
+                setShowTaskForm(false);
+                loadTasks(activeProjectId);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

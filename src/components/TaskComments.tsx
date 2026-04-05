@@ -190,13 +190,13 @@ export default function TaskComments({
                 <div className="flex gap-2">
                   <button
                     onClick={() => startEdit(c)}
-                    className="text-slate-400 hover:text-blue-500"
+                    className="text-slate-400 hover:text-blue-500 cursor-pointer"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => deleteComment(c.id)}
-                    className="text-slate-400 hover:text-red-500"
+                    className="text-slate-400 hover:text-red-500 cursor-pointer"
                   >
                     Delete
                   </button>
@@ -260,7 +260,7 @@ export default function TaskComments({
         <button
           onClick={addComment}
           disabled={isSubmitting || !newComment.trim()}
-          className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 disabled:opacity-50"
+          className="text-xs bg-slate-600 text-white px-2 py-1 rounded hover:bg-slate-700 disabled:opacity-50 cursor-pointer"
         >
           {isSubmitting ? "Adding..." : "Add"}
         </button>

@@ -63,9 +63,6 @@ button {
   transition: background-color 0.2s ease, opacity 0.2s ease;
 }
 
-button:hover {
-  opacity: 0.96;
-}
 .task-form {
   max-width: 400px;
   padding: 20px;
@@ -75,20 +72,6 @@ button:hover {
 
 .form-group {
   margin-bottom: 15px;
-}
-
-input,
-textarea,
-select {
-  width: 100%;
-  padding: 8px;
-}
-
-button {
-  width: 100%;
-  padding: 10px;
-  background: #0070f3;
-  color: white;
 }
 
 .error-message {
