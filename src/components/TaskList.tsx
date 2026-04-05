@@ -27,6 +27,7 @@ in the dashboard.
 */
 
 import { useState, useEffect } from "react";
+import TaskComments from "@/components/TaskComments";
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -62,46 +63,6 @@ function getPriorityColor(priority: string) {
   }
 }
 
-/*
-WEEK 5: Simple comment component for tasks
-Allows users to add quick comments to tasks.
-*/
-function TaskComments() {
-  const [comments, setComments] = useState<string[]>([]);
-  const [text, setText] = useState("");
-
-  function addComment() {
-    if (!text) return;
-    setComments([...comments, text]);
-    setText("");
-  }
-
-  return (
-    <div className="mt-3">
-      <p className="text-xs font-semibold text-slate-600">Comments</p>
-
-      {comments.map((c, i) => (
-        <div key={i} className="text-xs bg-slate-100 rounded p-1 mt-1">
-          {c}
-        </div>
-      ))}
-
-      <input
-        className="border rounded text-xs p-1 w-full mt-1"
-        placeholder="Add comment..."
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
-
-      <button
-        onClick={addComment}
-        className="text-xs bg-blue-500 text-white px-2 py-1 rounded mt-1"
-      >
-        Add Comment
-      </button>
-    </div>
-  );
-}
 
 export default function TaskList({
   tasks,
@@ -120,7 +81,7 @@ export default function TaskList({
   */
   async function updateStatus(taskId: string, status: Task["status"]) {
     try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
+      const response = await fetch(`/api/projects/${projectId}/tasks/${taskId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -228,21 +189,21 @@ export default function TaskList({
         <div className="flex gap-2 mt-3">
           <button
             onClick={() => updateStatus(task.id, "TODO")}
-            className="text-xs bg-yellow-200 px-2 py-1 rounded"
+            className="text-xs bg-yellow-200 px-2 py-1 rounded cursor-pointer"
           >
             Todo
           </button>
 
           <button
             onClick={() => updateStatus(task.id, "IN_PROGRESS")}
-            className="text-xs bg-blue-200 px-2 py-1 rounded"
+            className="text-xs bg-blue-200 px-2 py-1 rounded cursor-pointer"
           >
             Start
           </button>
 
           <button
             onClick={() => updateStatus(task.id, "DONE")}
-            className="text-xs bg-green-200 px-2 py-1 rounded"
+            className="text-xs bg-green-200 px-2 py-1 rounded cursor-pointer"
           >
             Done
           </button>
