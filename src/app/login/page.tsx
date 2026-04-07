@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const registered = searchParams.get("registered");
@@ -42,8 +43,11 @@ export default function LoginPage() {
       >
         <h1 className="text-2xl font-bold">Login</h1>
 
+        {/* WEEK 6 FINAL UI POLISH: Success message after registration */}
         {registered ? (
-          <p className="mt-4 text-sm text-green-600">Account created! Please sign in.</p>
+          <p className="mt-4 text-sm text-green-600">
+            Account created! Please sign in.
+          </p>
         ) : null}
 
         <div className="mt-6 space-y-4">
@@ -65,7 +69,9 @@ export default function LoginPage() {
           />
         </div>
 
-        {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
+        {error ? (
+          <p className="mt-4 text-sm text-red-600">{error}</p>
+        ) : null}
 
         <button
           type="submit"
@@ -76,5 +82,19 @@ export default function LoginPage() {
         </button>
       </form>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center text-sm text-slate-500">
+          Loading login...
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

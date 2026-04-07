@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import Providers from "./providers";
+import { AlertProvider } from "@/context/AlertContext";
 
 export const metadata: Metadata = {
   title: "TaskFlow",
@@ -18,7 +19,15 @@ export default function RootLayout({
         {/* fix 3:
             Wrap the entire app with SessionProvider so useSession()
             works in client components like the dashboard page. */}
-        <Providers>{children}</Providers>
+
+        {/* week-6-sprint-4 : Added AlertProvider to enable global success/error alerts across the application */}
+
+        <AlertProvider>
+          <Providers>
+            {children}
+          </Providers>
+        </AlertProvider>
+
       </body>
     </html>
   );

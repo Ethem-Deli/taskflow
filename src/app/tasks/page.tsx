@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import Pagination from "@/components/Pagination";
-
+import { useAlert } from "@/context/AlertContext";
 type Task = {
   id: string;
   title: string;
@@ -68,6 +68,7 @@ export default function TasksPage() {
   const [editingCommentContent, setEditingCommentContent] = useState("");
   const [commentEditSubmitting, setCommentEditSubmitting] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -224,6 +225,16 @@ export default function TasksPage() {
       setEditLoading(false);
     }
   }
+  async function handleCreateTask() {
+  try {
+    // [NEW] success message
+    showAlert("success", "Task created successfully");
+
+  } catch (error) {
+    // [NEW] error message
+    showAlert("error", "Failed to create task");
+  }
+}
 
   async function handleDelete(task: Task) {
     if (!confirm(`Are you sure you want to delete "${task.title}"? This cannot be undone.`)) return;

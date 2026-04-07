@@ -29,19 +29,6 @@ in the dashboard.
 import { useState, useEffect } from "react";
 import TaskComments from "@/components/TaskComments";
 
-function getStatusColor(status: string) {
-  switch (status) {
-    case "TODO":
-      return "bg-yellow-100 text-yellow-800";
-    case "IN_PROGRESS":
-      return "bg-blue-100 text-blue-800";
-    case "DONE":
-      return "bg-green-100 text-green-800";
-    default:
-      return "bg-slate-100 text-slate-700";
-  }
-}
-
 function formatStatus(status: string): string {
   return status.replace(/_/g, " ");
 }
@@ -50,19 +37,55 @@ function formatPriority(priority: string): string {
   return priority.charAt(0) + priority.slice(1).toLowerCase();
 }
 
-function getPriorityColor(priority: string) {
+/*
+WEEK 6 FINAL UI POLISH
+----------------------
+Further polished the Kanban task board:
+1. Upgraded columns into styled containers with stronger separation
+2. Improved task cards with better spacing and hierarchy
+3. Reworked priority styling into softer badge system
+4. Added better empty/loading states
+5. Wrapped comments area in a cleaner secondary surface
+*/
+
+function getPriorityStyles(priority: string) {
   switch (priority) {
     case "HIGH":
-      return "bg-red-100 text-red-700";
+      return "bg-red-50 text-red-700 ring-1 ring-red-100";
     case "MEDIUM":
-      return "bg-orange-100 text-orange-700";
+      return "bg-amber-50 text-amber-700 ring-1 ring-amber-100";
     case "LOW":
-      return "bg-green-100 text-green-700";
+      return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100";
     default:
       return "bg-slate-100 text-slate-700";
   }
 }
 
+function getColumnStyles(status: "TODO" | "IN_PROGRESS" | "DONE") {
+  switch (status) {
+    case "TODO":
+      return {
+        wrapper: "border-slate-200 bg-white/70",
+        badge: "bg-slate-100 text-slate-700",
+        dot: "bg-slate-500",
+        title: "To Do",
+      };
+    case "IN_PROGRESS":
+      return {
+        wrapper: "border-blue-200/60 bg-blue-50/60",
+        badge: "bg-blue-100 text-blue-700",
+        dot: "bg-blue-500",
+        title: "In Progress",
+      };
+    case "DONE":
+      return {
+        wrapper: "border-emerald-200/70 bg-emerald-50/60",
+        badge: "bg-emerald-100 text-emerald-700",
+        dot: "bg-emerald-500",
+        title: "Done",
+      };
+  }
+}
 
 export default function TaskList({
   tasks,
@@ -98,8 +121,8 @@ export default function TaskList({
       }
 
       // Update local state instead of reloading
-      setLocalTasks(prevTasks =>
-        prevTasks.map(t =>
+      setLocalTasks((prevTasks) =>
+        prevTasks.map((t) =>
           t.id === taskId ? { ...t, status } : t
         )
       );
@@ -115,13 +138,21 @@ export default function TaskList({
   }, [tasks]);
 
   if (loading) {
-    return <p className="mt-6 text-slate-500">Loading tasks...</p>;
+    return (
+      /* FINAL UI POLISH: Better loading container */
+      <div className="mt-6 rounded-3xl border border-slate-200 bg-white/80 p-8 text-center text-sm text-slate-500 shadow-sm">
+        Loading tasks...
+      </div>
+    );
   }
 
   if (localTasks.length === 0) {
     return (
-      <div className="mt-6 rounded-xl border border-dashed p-6 text-center text-slate-500">
-        No tasks created yet. Start by adding a new task.
+      <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-white/70 p-10 text-center">
+        <h3 className="text-lg font-semibold text-slate-900">No tasks yet</h3>
+        <p className="mt-2 text-sm text-slate-500">
+          Create your first task to start organizing work.
+        </p>
       </div>
     );
   }
@@ -135,20 +166,28 @@ export default function TaskList({
 
   function renderTask(task: Task) {
     return (
-      <article key={task.id} className="rounded-xl border p-4 bg-white shadow-sm">
+      <article
+        key={task.id}
+        className="rounded-3xl border border-slate-200/80 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+      >
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="font-semibold">{task.title}</h2>
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-slate-900">{task.title}</h2>
 
             {task.description ? (
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="mt-2 text-sm leading-6 text-slate-600">
                 {task.description}
               </p>
-            ) : null}
+            ) : (
+              /* FINAL UI POLISH: Better fallback when description is empty */
+              <p className="mt-2 text-sm italic text-slate-400">
+                No description provided
+              </p>
+            )}
           </div>
 
           <span
-            className={`rounded-full px-3 py-1 text-xs font-medium ${getPriorityColor(
+            className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${getPriorityStyles(
               task.priority
             )}`}
           >
@@ -156,61 +195,58 @@ export default function TaskList({
           </span>
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
-
-          <span
-            className={`rounded-full px-2 py-1 font-medium ${getStatusColor(
-              task.status
-            )}`}
-          >
+        {/* FINAL UI POLISH: Moved task metadata into a cleaner sub-surface */}
+        <div className="mt-4 grid gap-2 rounded-2xl bg-slate-50 p-3 text-xs text-slate-600 sm:grid-cols-2">
+          <div>
+            <span className="font-semibold text-slate-800">Status:</span>{" "}
             {formatStatus(task.status)}
-          </span>
+          </div>
 
-          <span>•</span>
-
-          <span>
-            Due:{" "}
+          <div>
+            <span className="font-semibold text-slate-800">Due:</span>{" "}
             {task.dueDate
               ? new Date(task.dueDate).toLocaleDateString()
               : "None"}
-          </span>
+          </div>
 
-          <span>•</span>
-
-          <span>
-            Assignee:{" "}
+          <div className="sm:col-span-2">
+            <span className="font-semibold text-slate-800">Assignee:</span>{" "}
             {task.assignee
               ? task.assignee.name ?? task.assignee.email
               : "Unassigned"}
-          </span>
+          </div>
         </div>
 
         {/* WEEK 5: Task status change buttons */}
-        <div className="flex gap-2 mt-3">
+        {/* FINAL UI POLISH: Unified button style for status actions */}
+        <div className="mt-4 flex flex-wrap gap-2">
           <button
             onClick={() => updateStatus(task.id, "TODO")}
-            className="text-xs bg-yellow-200 px-2 py-1 rounded cursor-pointer"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-slate-300 hover:bg-slate-50 cursor-pointer"
           >
             Todo
           </button>
 
           <button
             onClick={() => updateStatus(task.id, "IN_PROGRESS")}
-            className="text-xs bg-blue-200 px-2 py-1 rounded cursor-pointer"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-slate-300 hover:bg-slate-50 cursor-pointer"
           >
             Start
           </button>
 
           <button
             onClick={() => updateStatus(task.id, "DONE")}
-            className="text-xs bg-green-200 px-2 py-1 rounded cursor-pointer"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-slate-300 hover:bg-slate-50 cursor-pointer"
           >
             Done
           </button>
         </div>
 
         {/* WEEK 5: Task comments */}
-        <TaskComments taskId={task.id} projectId={projectId} />
+        {/* FINAL UI POLISH: Wrapped comments in a softer panel to separate it from task metadata */}
+        <div className="mt-4 rounded-2xl bg-slate-50/80 p-3">
+          <TaskComments taskId={task.id} projectId={projectId} />
+        </div>
       </article>
     );
   }
@@ -219,29 +255,45 @@ export default function TaskList({
     /*
     WEEK 5: Converted task list into Kanban layout
     */
-    <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-3">
+      {[
+        { key: "TODO" as const, items: todo },
+        { key: "IN_PROGRESS" as const, items: inProgress },
+        { key: "DONE" as const, items: done },
+      ].map((column) => {
+        const styles = getColumnStyles(column.key);
 
-      <div>
-        <h2 className="font-bold mb-3">To Do</h2>
-        <div className="space-y-4">
-          {todo.map(renderTask)}
-        </div>
-      </div>
+        return (
+          <div
+            key={column.key}
+            className={`rounded-[28px] border p-4 shadow-sm ${styles.wrapper}`}
+          >
+            {/* FINAL UI POLISH: Styled column header with dot + count badge */}
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className={`h-3 w-3 rounded-full ${styles.dot}`} />
+                <h2 className="text-base font-semibold text-slate-900">
+                  {styles.title}
+                </h2>
+              </div>
 
-      <div>
-        <h2 className="font-bold mb-3">In Progress</h2>
-        <div className="space-y-4">
-          {inProgress.map(renderTask)}
-        </div>
-      </div>
+              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${styles.badge}`}>
+                {column.items.length}
+              </span>
+            </div>
 
-      <div>
-        <h2 className="font-bold mb-3">Done</h2>
-        <div className="space-y-4">
-          {done.map(renderTask)}
-        </div>
-      </div>
-
+            <div className="space-y-4">
+              {column.items.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-white/60 px-4 py-6 text-center text-sm text-slate-400">
+                  No tasks here
+                </div>
+              ) : (
+                column.items.map(renderTask)
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

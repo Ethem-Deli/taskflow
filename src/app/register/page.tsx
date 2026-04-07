@@ -85,12 +85,23 @@ export default function RegisterPage() {
         {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
         <button
-          type="submit"
-          disabled={loading}
-          className="mt-6 w-full rounded-lg bg-slate-900 px-4 py-3 text-white disabled:opacity-60"
-        >
-          {loading ? "Creating account..." : "Register"}
-        </button>
+  type="submit"
+  disabled={loading}
+  className="
+    mt-6 w-full
+    rounded-xl
+    bg-blue-600
+    text-white
+    px-4 py-3
+    font-semibold
+    shadow-md
+    hover:bg-blue-700
+    transition-all
+    disabled:opacity-60
+  "
+>
+  {loading ? "Creating account..." : "Create Account"}
+</button>
       </form>
     </main>
   );
