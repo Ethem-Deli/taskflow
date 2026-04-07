@@ -12,10 +12,10 @@ export default function HomePage() {
 
         <div className="mt-8 flex gap-4">
           <Link
-            href="/register"
-            className="rounded-lg bg-slate-900 px-5 py-3 text-white"
-          >
-            Create account
+              href="/register"
+              className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-900 shadow-sm hover:bg-slate-50"
+            >
+            Create Account
           </Link>
           <Link
             href="/login"
