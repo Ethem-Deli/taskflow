@@ -114,6 +114,49 @@ taskflow
 │
 └── README.md
 
+## Database Management
+
+TaskFlow uses SQLite for data storage with Prisma as the ORM. The following scripts are available for database management:
+
+### Database Scripts
+
+- **Seed Database**: Populate the database with sample data for development/testing
+  ```bash
+  npm run db:seed
+  ```
+  Creates sample users, projects, tasks, and comments.
+
+- **Backup Database**: Create a timestamped backup of the current database
+  ```bash
+  npm run db:backup
+  ```
+  Creates a backup file in the `prisma/` directory.
+
+- **Test Queries**: Run performance and consistency tests on the database
+  ```bash
+  npm run db:test-queries
+  ```
+  Executes 15 automated tests to verify query performance and data integrity.
+
+### Test Accounts
+
+After running `npm run db:seed`, you can log in with these test accounts:
+
+- **alice@example.com** / password123 (Admin user)
+- **bob@example.com** / password123
+- **charlie@example.com** / password123
+- **diana@example.com** / password123
+
+### Database Schema
+
+The database includes the following main entities:
+- **Users**: Authentication and profile information
+- **Projects**: Project containers with owners and members
+- **Tasks**: Individual work items with status, priority, and assignments
+- **Comments**: Task discussions and updates
+
+All relationships include proper foreign key constraints and cascading deletes for data consistency.
+
 Getting Started
 
 1. Clone the Repository
@@ -148,6 +191,7 @@ Project Leader
 Ethem Deli
 Steve Amos Daprim
 Douglas Greyling
+Gabriel Scuzziato Dubiela
 
 Weekly Meeting Time
 Thursday

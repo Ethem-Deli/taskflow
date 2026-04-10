@@ -53,7 +53,8 @@ afterAll(async () => {
 describe("GET /api/projects", () => {
   it("returns 401 when not authenticated", async () => {
     asNoSession();
-    const res = await GET();
+    const req = makeRequest("http://localhost/api/projects");
+    const res = await GET(req);
     expect(res.status).toBe(401);
   });
 
@@ -62,7 +63,8 @@ describe("GET /api/projects", () => {
 
     asSession(user.id);
 
-    const res = await GET();
+    const req = makeRequest("http://localhost/api/projects");
+    const res = await GET(req);
 
     expect(res.status).toBe(200);
 
@@ -80,7 +82,8 @@ describe("GET /api/projects", () => {
 
     asSession(member.id);
 
-    const res = await GET();
+    const req = makeRequest("http://localhost/api/projects");
+    const res = await GET(req);
     const { projects } = await res.json();
 
     expect(projects).toHaveLength(1);
@@ -95,7 +98,8 @@ describe("GET /api/projects", () => {
 
     asSession(user.id);
 
-    const res = await GET();
+    const req = makeRequest("http://localhost/api/projects");
+    const res = await GET(req);
     const { projects } = await res.json();
 
     expect(projects[0].role).toBe("OWNER");
