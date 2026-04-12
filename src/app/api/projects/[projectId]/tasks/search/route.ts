@@ -33,40 +33,44 @@ export async function GET(req: Request, { params }: Params) {
 
   const { q, status, priority } = parsed.data;
 
-  const tasks = await db.task.findMany({
-    where: {
-      projectId,
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10)));
+  const skip = (page - 1) * limit;
 
-      // Combine text search with optional filters
-      ...(status && { status }),
-      ...(priority && { priority }),
+  const where = {
+    projectId,
+    ...(status && { status }),
+    ...(priority && { priority }),
+    ...(q && {
+      OR: [
+        { title: { contains: q } },
+        { description: { contains: q } },
+        { assignee: { name: { contains: q } } },
+      ],
+    }),
+  };
 
-      // Only apply text search if q is provided
-      ...(q && {
-        OR: [
-          // Search in task title
-          { title: { contains: q } },
-
-          // Search in task description
-          { description: { contains: q } },
-
-          // Search by assignee name
-          {
-            assignee: {
-              name: { contains: q },
-            },
-          },
-        ],
-      }),
-    },
-    include: {
-      assignee: {
-        select: { id: true, name: true, email: true },
+  const [tasks, total] = await Promise.all([
+    db.task.findMany({
+      where,
+      include: {
+        assignee: {
+          select: { id: true, name: true, email: true },
+        },
+        _count: { select: { comments: true } },
       },
-      _count: { select: { comments: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    db.task.count({ where }),
+  ]);
 
-  return NextResponse.json({ tasks, total: tasks.length });
+  return NextResponse.json({
+    tasks,
+    total,
+    page,
+    limit,
+    hasMore: skip + tasks.length < total,
+  });
 }
