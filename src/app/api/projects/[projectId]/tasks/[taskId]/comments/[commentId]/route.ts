@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertProjectMember } from "@/lib/project-auth";
 import { commentSchema } from "@/lib/validators";
+import { handleApiError } from "@/lib/api-errors";
 
 type Params = { params: Promise<{ projectId: string; taskId: string; commentId: string }> };
 
@@ -68,23 +69,27 @@ export async function PATCH(req: Request, { params }: Params) {
         );
     }
 
-    const body = await req.json();
-    const parsed = commentSchema.safeParse(body);
+    try {
+        const body = await req.json();
+        const parsed = commentSchema.safeParse(body);
 
-    if (!parsed.success) {
-        return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
+        if (!parsed.success) {
+            return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
+        }
+
+        const updated = await db.comment.update({
+            where: { id: commentId },
+            data: { content: parsed.data.content },
+            select: {
+                id: true,
+                content: true,
+                createdAt: true,
+                user: { select: { id: true, name: true, email: true } },
+            },
+        });
+
+        return NextResponse.json({ comment: updated });
+    } catch (err) {
+        return handleApiError(err, "Failed to update comment");
     }
-
-    const updated = await db.comment.update({
-        where: { id: commentId },
-        data: { content: parsed.data.content },
-        select: {
-            id: true,
-            content: true,
-            createdAt: true,
-            user: { select: { id: true, name: true, email: true } },
-        },
-    });
-
-    return NextResponse.json({ comment: updated });
 }
