@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, ProjectRole, TaskStatus, TaskPriority } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const db = new PrismaClient();
@@ -7,10 +7,8 @@ const db = new PrismaClient();
 async function main() {
   console.log("🌱 Starting database seeding...");
 
-  // Create hashed password for all users
   const hashedPassword = await bcrypt.hash("password123", 10);
 
-  // Create sample users
   console.log("👥 Creating users...");
   const users = await Promise.all([
     db.user.upsert({
@@ -53,7 +51,6 @@ async function main() {
 
   console.log(`✓ Created ${users.length} users`);
 
-  // Create sample projects
   console.log("📁 Creating projects...");
   const projects = await Promise.all([
     db.project.create({
@@ -88,26 +85,21 @@ async function main() {
 
   console.log(`✓ Created ${projects.length} projects`);
 
-  // Add project members
   console.log("👨‍👩‍👧‍👦 Adding project members...");
   const memberships = [
-    // TaskFlow Web App members
-    { projectId: projects[0].id, userId: users[0].id, role: "OWNER" },
-    { projectId: projects[0].id, userId: users[1].id, role: "MEMBER" },
-    { projectId: projects[0].id, userId: users[2].id, role: "MEMBER" },
+    { projectId: projects[0].id, userId: users[0].id, role: ProjectRole.OWNER },
+    { projectId: projects[0].id, userId: users[1].id, role: ProjectRole.MEMBER },
+    { projectId: projects[0].id, userId: users[2].id, role: ProjectRole.MEMBER },
 
-    // Mobile App members
-    { projectId: projects[1].id, userId: users[1].id, role: "OWNER" },
-    { projectId: projects[1].id, userId: users[0].id, role: "MEMBER" },
-    { projectId: projects[1].id, userId: users[3].id, role: "MEMBER" },
+    { projectId: projects[1].id, userId: users[1].id, role: ProjectRole.OWNER },
+    { projectId: projects[1].id, userId: users[0].id, role: ProjectRole.MEMBER },
+    { projectId: projects[1].id, userId: users[3].id, role: ProjectRole.MEMBER },
 
-    // API Backend members
-    { projectId: projects[2].id, userId: users[0].id, role: "OWNER" },
-    { projectId: projects[2].id, userId: users[3].id, role: "MEMBER" },
+    { projectId: projects[2].id, userId: users[0].id, role: ProjectRole.OWNER },
+    { projectId: projects[2].id, userId: users[3].id, role: ProjectRole.MEMBER },
 
-    // Design System members
-    { projectId: projects[3].id, userId: users[2].id, role: "OWNER" },
-    { projectId: projects[3].id, userId: users[1].id, role: "MEMBER" },
+    { projectId: projects[3].id, userId: users[2].id, role: ProjectRole.OWNER },
+    { projectId: projects[3].id, userId: users[1].id, role: ProjectRole.MEMBER },
   ];
 
   await db.projectMember.createMany({
@@ -116,112 +108,107 @@ async function main() {
 
   console.log(`✓ Added ${memberships.length} project memberships`);
 
-  // Create sample tasks
   console.log("📋 Creating tasks...");
   const tasks = [
-    // TaskFlow Web App tasks
     {
       title: "Implement user authentication",
       description: "Add login, registration, and password reset functionality",
-      status: "DONE",
-      priority: "HIGH",
+      status: TaskStatus.DONE,
+      priority: TaskPriority.HIGH,
       projectId: projects[0].id,
       assigneeId: users[1].id,
-      dueDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
+      dueDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     },
     {
       title: "Design dashboard layout",
       description: "Create responsive dashboard with project overview",
-      status: "IN_PROGRESS",
-      priority: "HIGH",
+      status: TaskStatus.IN_PROGRESS,
+      priority: TaskPriority.HIGH,
       projectId: projects[0].id,
       assigneeId: users[2].id,
-      dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+      dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
     },
     {
       title: "Add task filtering",
       description: "Implement filters by status, priority, and assignee",
-      status: "TODO",
-      priority: "MEDIUM",
+      status: TaskStatus.TODO,
+      priority: TaskPriority.MEDIUM,
       projectId: projects[0].id,
       assigneeId: users[1].id,
-      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 2 weeks from now
+      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
     },
     {
       title: "Write unit tests",
       description: "Add comprehensive test coverage for components",
-      status: "TODO",
-      priority: "LOW",
+      status: TaskStatus.TODO,
+      priority: TaskPriority.LOW,
       projectId: projects[0].id,
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 1 month from now
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     },
 
-    // Mobile App tasks
     {
       title: "Setup React Native project",
       description: "Initialize project with navigation and basic screens",
-      status: "DONE",
-      priority: "HIGH",
+      status: TaskStatus.DONE,
+      priority: TaskPriority.HIGH,
       projectId: projects[1].id,
       assigneeId: users[1].id,
-      dueDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 2 weeks ago
+      dueDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
     },
     {
       title: "Implement push notifications",
       description: "Add Firebase integration for push notifications",
-      status: "IN_PROGRESS",
-      priority: "MEDIUM",
+      status: TaskStatus.IN_PROGRESS,
+      priority: TaskPriority.MEDIUM,
       projectId: projects[1].id,
       assigneeId: users[3].id,
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week from now
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     },
     {
       title: "Design app icons",
       description: "Create app icons for different screen densities",
-      status: "TODO",
-      priority: "LOW",
+      status: TaskStatus.TODO,
+      priority: TaskPriority.LOW,
       projectId: projects[1].id,
-      dueDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000), // 3 weeks from now
+      dueDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
     },
 
-    // API Backend tasks
     {
       title: "Optimize database queries",
       description: "Add indexes and optimize slow queries",
-      status: "DONE",
-      priority: "HIGH",
+      status: TaskStatus.DONE,
+      priority: TaskPriority.HIGH,
       projectId: projects[2].id,
       assigneeId: users[0].id,
-      dueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+      dueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
     },
     {
       title: "Add rate limiting",
       description: "Implement API rate limiting for security",
-      status: "IN_PROGRESS",
-      priority: "MEDIUM",
+      status: TaskStatus.IN_PROGRESS,
+      priority: TaskPriority.MEDIUM,
       projectId: projects[2].id,
       assigneeId: users[3].id,
-      dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
+      dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
     },
 
-    // Design System tasks
     {
       title: "Create component library",
       description: "Build reusable UI components with Storybook",
-      status: "IN_PROGRESS",
-      priority: "HIGH",
+      status: TaskStatus.IN_PROGRESS,
+      priority: TaskPriority.HIGH,
       projectId: projects[3].id,
       assigneeId: users[2].id,
-      dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
+      dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
     },
     {
       title: "Document design tokens",
       description: "Define and document colors, typography, spacing",
-      status: "TODO",
-      priority: "MEDIUM",
+      status: TaskStatus.TODO,
+      priority: TaskPriority.MEDIUM,
       projectId: projects[3].id,
       assigneeId: users[1].id,
-      dueDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000), // 20 days from now
+      dueDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000),
     },
   ];
 
@@ -233,7 +220,6 @@ async function main() {
 
   console.log(`✓ Created ${createdTasks.length} tasks`);
 
-  // Create sample comments
   console.log("💬 Creating comments...");
   const comments = [
     {
@@ -290,18 +276,6 @@ async function main() {
   console.log(`✓ Created ${comments.length} comments`);
 
   console.log("\n🎉 Database seeding completed successfully!");
-  console.log("\n📊 Summary:");
-  console.log(`   Users: ${users.length}`);
-  console.log(`   Projects: ${projects.length}`);
-  console.log(`   Project Members: ${memberships.length}`);
-  console.log(`   Tasks: ${createdTasks.length}`);
-  console.log(`   Comments: ${comments.length}`);
-
-  console.log("\n🔐 Test accounts:");
-  console.log("   alice@example.com / password123 (Admin)");
-  console.log("   bob@example.com / password123");
-  console.log("   charlie@example.com / password123");
-  console.log("   diana@example.com / password123");
 }
 
 main()
