@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertProjectMember } from "@/lib/project-auth";
+import { handleApiError } from "@/lib/api-errors";
 
 type Params = { params: Promise<{ projectId: string }> };
 
@@ -17,9 +18,10 @@ export async function GET(_req: Request, { params }: Params) {
   const { error } = await assertProjectMember(projectId, session.user.id);
   if (error) return error;
 
-  const now = new Date();
+  try {
+    const now = new Date();
 
-  // Run all queries in parallel for performance
+    // Run all queries in parallel for performance
   const [tasksByStatus, tasksByPriority, overdueTasks, members, tasks] =
     await Promise.all([
       // Total tasks grouped by status
@@ -129,14 +131,17 @@ export async function GET(_req: Request, { params }: Params) {
     };
   });
 
-  return NextResponse.json({
-    stats: {
-      totalTasks,
-      completionRate,
-      overdueTasks,
-      byStatus,
-      byPriority,
-      members: memberStats,
-    },
-  });
+    return NextResponse.json({
+      stats: {
+        totalTasks,
+        completionRate,
+        overdueTasks,
+        byStatus,
+        byPriority,
+        members: memberStats,
+      },
+    });
+  } catch (err) {
+    return handleApiError(err, "Failed to load project stats");
+  }
 }

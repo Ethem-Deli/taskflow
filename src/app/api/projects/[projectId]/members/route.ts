@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { inviteMemberSchema } from "@/lib/validators";
 import { assertProjectMember, assertProjectOwner } from "@/lib/project-auth";
+import { handleApiError } from "@/lib/api-errors";
 
 type Params = { params: Promise<{ projectId: string }> };
 
