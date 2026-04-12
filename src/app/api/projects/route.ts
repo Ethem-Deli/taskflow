@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { projectSchema } from "@/lib/validators";
+import { handleApiError } from "@/lib/api-errors";
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
@@ -11,34 +12,38 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { searchParams } = new URL(req.url);
-  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
-  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "10", 10)));
-  const skip = (page - 1) * limit;
+  try {
+    const { searchParams } = new URL(req.url);
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "10", 10)));
+    const skip = (page - 1) * limit;
 
-  const where = { userId: session.user.id };
+    const where = { userId: session.user.id };
 
-  const [memberships, total] = await Promise.all([
-    db.projectMember.findMany({
-      where,
-      include: {
-        project: {
-          select: { id: true, name: true, description: true, createdAt: true },
+    const [memberships, total] = await Promise.all([
+      db.projectMember.findMany({
+        where,
+        include: {
+          project: {
+            select: { id: true, name: true, description: true, createdAt: true },
+          },
         },
-      },
-      orderBy: { createdAt: "asc" },
-      skip,
-      take: limit,
-    }),
-    db.projectMember.count({ where }),
-  ]);
+        orderBy: { createdAt: "asc" },
+        skip,
+        take: limit,
+      }),
+      db.projectMember.count({ where }),
+    ]);
 
-  const projects = memberships.map((m) => ({
-    ...m.project,
-    role: m.role,
-  }));
+    const projects = memberships.map((m) => ({
+      ...m.project,
+      role: m.role,
+    }));
 
-  return NextResponse.json({ projects, total, page, limit });
+    return NextResponse.json({ projects, total, page, limit });
+  } catch (err) {
+    return handleApiError(err, "Failed to load projects");
+  }
 }
 
 export async function POST(req: Request) {
@@ -48,38 +53,42 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
-  const parsed = projectSchema.safeParse(body);
+  try {
+    const body = await req.json();
+    const parsed = projectSchema.safeParse(body);
 
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
 
-  const project = await db.$transaction(async (tx) => {
-    const created = await tx.project.create({
-    data: {
-    name: parsed.data.name,
-    description: parsed.data.description,
-    ownerId: session.user.id,
-  },
-});
+    const project = await db.$transaction(async (tx) => {
+      const created = await tx.project.create({
+        data: {
+          name: parsed.data.name,
+          description: parsed.data.description,
+          ownerId: session.user.id,
+        },
+      });
 
-    await tx.projectMember.create({
-      data: {
-        projectId: created.id,
-        userId: session.user.id,
-        role: "OWNER",
-      },
+      await tx.projectMember.create({
+        data: {
+          projectId: created.id,
+          userId: session.user.id,
+          role: "OWNER",
+        },
+      });
+
+      return created;
     });
 
-    return created;
-  });
-
-  return NextResponse.json(
-   {
-      project,
-      message: "Project created successfully",
-    },
-    { status: 201 },
-  );
+    return NextResponse.json(
+      {
+        project,
+        message: "Project created successfully",
+      },
+      { status: 201 },
+    );
+  } catch (err) {
+    return handleApiError(err, "Failed to create project");
+  }
 }

@@ -45,23 +45,37 @@ export async function GET(req: Request, { params }: Params) {
 
   const { status, priority } = parsed.data;
 
-  const tasks = await db.task.findMany({
-    where: {
-      projectId,
-      // -- Old code (kept for comparison) --
-      // ...(status && { status: status as "TODO" | "IN_PROGRESS" | "DONE" }),
-      // ...(priority && { priority: priority as "LOW" | "MEDIUM" | "HIGH" }),
-      ...(status && { status }),
-      ...(priority && { priority }),
-    },
-    include: {
-      assignee: assigneeSelect,
-      _count: { select: { comments: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10)));
+  const skip = (page - 1) * limit;
 
-  return NextResponse.json({ tasks });
+  const where = {
+    projectId,
+    ...(status && { status }),
+    ...(priority && { priority }),
+  };
+
+  const [tasks, total] = await Promise.all([
+    db.task.findMany({
+      where,
+      include: {
+        assignee: assigneeSelect,
+        _count: { select: { comments: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    db.task.count({ where }),
+  ]);
+
+  return NextResponse.json({
+    tasks,
+    total,
+    page,
+    limit,
+    hasMore: skip + tasks.length < total,
+  });
 }
 
 export async function POST(req: Request, { params }: Params) {

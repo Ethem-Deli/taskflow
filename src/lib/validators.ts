@@ -11,7 +11,7 @@ export const taskSchema = z.object({
   description: z.string().optional(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]),
   status: z.enum(["TODO", "IN_PROGRESS", "DONE"]).optional(),
-  dueDate: z.string().optional(),
+  dueDate: z.iso.date({ message: "due date must be a valid YYYY-MM-DD date" }).optional(),
 });
 
 export const projectSchema = z.object({
@@ -28,7 +28,7 @@ export const projectTaskSchema = z.object({
   description: z.string().optional(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]),
   status: z.enum(["TODO", "IN_PROGRESS", "DONE"]).optional(),
-  dueDate: z.string().optional(),
+  dueDate: z.iso.date({ message: "due date must be a valid YYYY-MM-DD date" }).optional(),
   assigneeId: z.string().optional(),
 });
 
