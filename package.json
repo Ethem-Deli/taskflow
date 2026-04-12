@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "jest --runInBand",
     "db:test-queries": "npx tsx prisma/test-queries.ts",
     "db:seed": "npx tsx prisma/seed.ts",
-    "db:backup": "npx tsx prisma/backup.ts"
+    "db:backup": "npx tsx prisma/backup.ts",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
