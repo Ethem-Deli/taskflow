@@ -374,6 +374,7 @@ export default function TasksPage() {
         </div>
       </div>
 
+      
       {/* View modal */}
       {viewingTask && (
         <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/40" onClick={closeView}>
